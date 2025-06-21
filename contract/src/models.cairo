@@ -1,4 +1,3 @@
-
 use starknet::{ContractAddress, get_block_timestamp};
 use origami_random::deck::{Deck, DeckTrait};
 use quad_clue::constant::{MAX_AVAILABLE_LETTERS};
