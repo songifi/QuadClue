@@ -1,0 +1,86 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=JetBrains+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Playwrite+GB+S:ital,wght@0,100..400;1,100..400&display=swap");
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary-orange: #ff8c00;
+  --primary-green: #00ff88;
+  --success-green: #4caf50;
+  --jet-brains: "JetBrains Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background-color: #181a1b;
+  background-image: repeating-linear-gradient(
+      45deg,
+      #e3edee 0 20px,
+      #b6d8de 20px 40px
+    ),
+    repeating-linear-gradient(-45deg, #e3edee 0 20px, #b6d8de 20px 40px);
+  background-size: 32px 32px;
+  background-blend-mode: normal;
+  color: var(--foreground);
+}
+
+/* Button gradient overlay for CTA */
+.btn-gradient-overlay {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.group:hover .btn-gradient-overlay {
+  opacity: 1;
+}
+
+/* Bounce-in animation for logo */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-50px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-10px);
+  }
+  70% {
+    transform: scale(0.9) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-bounce-in {
+  animation: bounceIn 0.8s ease-out;
+}
+
+/* Safe area for mobile */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.font-jetbrains {
+  font-family: var(--jet-brains);
+}
+
+.font-bricolage {
+  font-family: "Bricolage Grotesque", sans-serif;
+}
+
+.text-primary-orange {
+  color: var(--primary-orange);
+}
