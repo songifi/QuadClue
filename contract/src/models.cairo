@@ -121,7 +121,7 @@ pub impl PuzzleImpl of PuzzleTrait {
     }
 
     fn validate_guess_letters(guess: ByteArray, available_letters: Span<felt252>) -> bool {
-        let guess_letters = PuzzleTrait::split_word(guess.clone());
+        let guess_letters = Self::split_word(guess.clone());
 
         // Check each guessed letter exists in available pool
         let mut i = 0;
@@ -156,7 +156,7 @@ pub impl PuzzleImpl of PuzzleTrait {
 
     // Generate letter pool automatically from answer
     fn generate_available_letters(answer: ByteArray) -> Span<felt252> {
-        let answer_letters = PuzzleTrait::split_word(answer.clone());
+        let answer_letters = Self::split_word(answer.clone());
         let mut available_letters = ArrayTrait::new();
 
         // Add all answer letters first
@@ -194,7 +194,7 @@ pub impl PuzzleImpl of PuzzleTrait {
         ]
             .span();
 
-        let answer_hash = PuzzleTrait::hash_word(answer.clone());
+        let answer_hash = Self::hash_word(answer.clone());
         let seed = answer_hash
             + get_block_timestamp().into(); // Combine timestamp + answer for seed
         let mut deck = DeckTrait::new(seed, distractors.len().try_into().unwrap());
