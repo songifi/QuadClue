@@ -227,3 +227,166 @@ pub impl PuzzleImpl of PuzzleTrait {
         shuffle_letters(available_letters)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hash_word() {
+        let word1: ByteArray = "hello";
+        let word2: ByteArray = "world";
+
+        let hash1 = PuzzleTrait::hash_word(word1.clone());
+        let hash2 = PuzzleTrait::hash_word(word2.clone());
+
+        assert!(hash1 != hash2, "Different words");
+        assert!(hash1 == PuzzleTrait::hash_word(word1), "Same word");
+    }
+
+    #[test]
+    fn test_split_word() {
+        let word: ByteArray = "hello";
+        let letters = PuzzleTrait::split_word(word.clone());
+
+        assert!(letters.len() == 5, "Should have 5 letters");
+        assert!(*letters[0] == 'h', "First letter should be 'h'");
+        assert!(*letters[1] == 'e', "Second letter should be 'e'");
+        assert!(*letters[2] == 'l', "Third letter should be 'l'");
+        assert!(*letters[3] == 'l', "Fourth letter should be 'l'");
+        assert!(*letters[4] == 'o', "Fifth letter should be 'o'");
+    }
+
+    #[test]
+    fn test_validate_guess_letters() {
+        let available_letters: Span<felt252> = array!['h', 'e', 'l', 'l', 'o'].span();
+        let guess1: ByteArray = "hello";
+        let guess2: ByteArray = "world";
+
+        assert(
+            PuzzleTrait::validate_guess_letters(guess1, available_letters), 'Guess should be valid',
+        );
+        assert!(
+            !PuzzleTrait::validate_guess_letters(guess2, available_letters),
+            "Guess should be invalid",
+        );
+
+        let guess1: ByteArray = "complex";
+        let guess2: ByteArray = "satisfy";
+
+        assert(
+            PuzzleTrait::validate_guess_letters(guess1.clone(), PuzzleTrait::split_word(guess1)),
+            'Guess should be valid',
+        );
+        assert!(
+            PuzzleTrait::validate_guess_letters(guess2.clone(), PuzzleTrait::split_word(guess2)),
+            "Guess2 should be valid",
+        );
+
+        let guess1: ByteArray = "helloq";
+        let guess2: ByteArray = "worldz";
+
+        let available_letters: Span<felt252> = array![
+            'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd',
+        ]
+            .span();
+
+        assert(
+            !PuzzleTrait::validate_guess_letters(guess1, available_letters),
+            'Guess should be invalid',
+        );
+        assert!(
+            !PuzzleTrait::validate_guess_letters(guess2, available_letters),
+            "Guess2 should be invalid",
+        );
+    }
+
+    #[test]
+    fn test_generate_available_letters_basic() {
+        let answer = "CAT";
+        let available = PuzzleTrait::generate_available_letters(answer);
+
+        // Should have exactly 12 letters
+        assert_eq!(available.len(), MAX_AVAILABLE_LETTERS.into());
+
+        // Should contain all answer letters
+        assert!(contains_letter(available, 'C'));
+        assert!(contains_letter(available, 'A'));
+        assert!(contains_letter(available, 'T'));
+    }
+
+    #[test]
+    fn test_generate_available_letters_duplicates_in_answer() {
+        let answer = "BOOK"; // Has duplicate 'O'
+        let available = PuzzleTrait::generate_available_letters(answer);
+
+        assert_eq!(available.len(), MAX_AVAILABLE_LETTERS.into());
+
+        // Should contain all unique answer letters
+        assert!(contains_letter(available, 'B'));
+        assert!(contains_letter(available, 'O'));
+        assert!(contains_letter(available, 'K'));
+
+        // Count occurrences of 'O' - should appear twice since answer has two
+        let mut o_count = 0;
+        let mut i = 0;
+        loop {
+            if i >= available.len() {
+                break;
+            }
+            if *available.at(i) == 'O' {
+                o_count += 1;
+            }
+            i += 1;
+        };
+        assert_eq!(o_count, 2); // Two 'O's from "BOOK"
+    }
+
+    #[test]
+    fn test_generate_available_letters_short_answer() {
+        let answer = "GO";
+        let available = PuzzleTrait::generate_available_letters(answer);
+
+        assert_eq!(available.len(), MAX_AVAILABLE_LETTERS.into());
+        assert!(contains_letter(available, 'G'));
+        assert!(contains_letter(available, 'O'));
+
+        // Should have 10 distractor letters (12 - 2 from answer)
+        let non_answer_count = count_non_answer_letters(available, "GO");
+        assert_eq!(non_answer_count, 10);
+    }
+
+    #[test]
+    fn test_generate_available_letters_long_answer() {
+        let answer = "ELEPHANT"; // 8 letters
+        let available = PuzzleTrait::generate_available_letters(answer);
+
+        assert_eq!(available.len(), MAX_AVAILABLE_LETTERS.into());
+
+        // Should contain all unique answer letters
+        assert!(contains_letter(available, 'E'));
+        assert!(contains_letter(available, 'L'));
+        assert!(contains_letter(available, 'P'));
+        assert!(contains_letter(available, 'H'));
+        assert!(contains_letter(available, 'A'));
+        assert!(contains_letter(available, 'N'));
+        assert!(contains_letter(available, 'T'));
+
+        // Should have some distractors (depending on duplicates in answer)
+        let non_answer_count = count_non_answer_letters(available, "ELEPHANT");
+        assert!(non_answer_count >= 4); // At least some distractors
+    }
+
+    #[test]
+    fn test_generate_available_letters_max_length_answer() {
+        let answer: ByteArray = "ABCDEFGHIJKL"; // 12 letters (max)
+        let available = PuzzleTrait::generate_available_letters(answer.clone());
+
+        assert_eq!(available.len(), MAX_AVAILABLE_LETTERS.into());
+
+        for i in 0..answer.len() {
+            let letter = answer.at(i).unwrap();
+            assert!(contains_letter(available, letter.into()));
+        }
+    }
+}
