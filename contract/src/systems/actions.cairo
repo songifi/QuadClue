@@ -1,14 +1,11 @@
-use quad_clue::models::{Puzzle, PlayerStats, Difficulty};
+use quad_clue::models::{Puzzle, PlayerStats, PuzzleData};
 use starknet::{ContractAddress};
 
 #[starknet::interface]
 pub trait IActions<T> {
-    fn create_puzzle(
-        ref self: T, image_hashes: Span<felt252>, answer: ByteArray, difficulty: Difficulty,
-    ) -> u64;
-
+    fn create_puzzle(ref self: T, image_hashes: Span<felt252>, answer: ByteArray) -> u64;
+    fn add_batch_puzzle(ref self: T, puzzles: Span<PuzzleData>);
     fn submit_guess(ref self: T, puzzle_id: u64, guess: ByteArray) -> bool;
-
     // View functions
     fn get_puzzle(self: @T, puzzle_id: u64) -> Puzzle;
     fn get_player_stats(self: @T, player: ContractAddress) -> PlayerStats;
@@ -21,7 +18,7 @@ pub mod actions {
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, contract_address_const,
     };
-    use quad_clue::models::{Puzzle, Difficulty, PlayerStats, GameState, PuzzleTrait};
+    use quad_clue::models::{Puzzle, Difficulty, PlayerStats, GameState, PuzzleTrait, PuzzleData};
     use quad_clue::constant::{GAME_ID, MAX_AVAILABLE_LETTERS};
 
     use dojo::model::{ModelStorage};
@@ -77,10 +74,7 @@ pub mod actions {
     #[abi(embed_v0)]
     impl ActionsImpl of IActions<ContractState> {
         fn create_puzzle(
-            ref self: ContractState,
-            image_hashes: Span<felt252>,
-            answer: ByteArray,
-            difficulty: Difficulty,
+            ref self: ContractState, image_hashes: Span<felt252>, answer: ByteArray,
         ) -> u64 {
             let mut world = self.world_default();
             let creator = get_caller_address();
@@ -105,7 +99,7 @@ pub mod actions {
                 word_length: answer.len().try_into().unwrap(),
                 available_letters,
                 active: true,
-                difficulty: difficulty.into(),
+                difficulty: Difficulty::LEVEL_1.into(),
                 creation_time: get_block_timestamp(),
                 solve_count: 0,
                 first_solver: contract_address_const::<0>(),
@@ -129,6 +123,18 @@ pub mod actions {
                 );
 
             puzzle_id
+        }
+
+        fn add_batch_puzzle(ref self: ContractState, puzzles: Span<PuzzleData>) {
+            let mut world = self.world_default();
+
+            assert(puzzles.len() > 0, 'puzzles cannot be empty');
+
+            for i in 0..puzzles.len() {
+                let puzzle = puzzles[i].clone();
+
+                self.create_puzzle(puzzle.image_hashes, puzzle.answer);
+            };
         }
 
         fn submit_guess(ref self: ContractState, puzzle_id: u64, guess: ByteArray) -> bool {

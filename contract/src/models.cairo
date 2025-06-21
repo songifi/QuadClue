@@ -14,10 +14,16 @@ pub struct Puzzle {
     pub word_length: u8, // Number of letters in answer
     pub available_letters: Span<felt252>, // Packed scrambled letters pool
     pub active: bool,
-    pub difficulty: felt252, // level 1-5 scale
+    pub difficulty: felt252, // level 1-5 scale // TODO: incorporate difficulty
     pub creation_time: u64,
     pub solve_count: u32, // Number of players who solved it
     pub first_solver: ContractAddress,
+}
+
+#[derive(Clone, Drop, Serde, Debug, PartialEq)]
+pub struct PuzzleData {
+    pub image_hashes: Span<felt252>,
+    pub answer: ByteArray,
 }
 
 #[derive(Copy, Drop, Serde, Debug)]
