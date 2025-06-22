@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import React from "react";
 import GlobalMusicController from "@/components/GlobalMusicController";
+import { ClientProvider } from "@/components/providers/ClientProvider";
+import { WalletConnectionGuard } from "@/components/WalletConnectionGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,16 +31,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <audio
-          id="global-background-music"
-          src="/sounds/background-music.wav"
-          loop
-          preload="auto"
-          style={{ display: "none" }}
-        />
-        {/* Client-side music controller */}
-        <GlobalMusicController />
-        {children}
+        <ClientProvider>
+          <audio
+            id="global-background-music"
+            src="/sounds/background-music.wav"
+            loop
+            preload="auto"
+            style={{ display: "none" }}
+          />
+          {/* Client-side music controller */}
+          <GlobalMusicController />
+          
+          {/* Require wallet connection for the entire app */}
+          <WalletConnectionGuard>
+            {children}
+          </WalletConnectionGuard>
+        </ClientProvider>
       </body>
     </html>
   );

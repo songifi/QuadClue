@@ -9,9 +9,11 @@ import LevelBadge from "./LevelBadge";
 interface GameHeaderProps {
   level: number;
   coins: number;
+  onUseHint?: () => void;
+  hintsRemaining?: number;
 }
 
-export default function GameHeader({ level, coins }: GameHeaderProps) {
+export default function GameHeader({ level, coins, onUseHint, hintsRemaining = 3 }: GameHeaderProps) {
   const router = useRouter();
   const [soundOn, setSoundOn] = useState(() => {
     if (typeof window !== "undefined") {
@@ -39,6 +41,12 @@ export default function GameHeader({ level, coins }: GameHeaderProps) {
 
   const handleClick = () => {
     router.push(ROUTES.HOME);
+  };
+
+  const handleHintClick = () => {
+    if (onUseHint && hintsRemaining > 0) {
+      onUseHint();
+    }
   };
 
   return (
@@ -88,18 +96,49 @@ export default function GameHeader({ level, coins }: GameHeaderProps) {
           </div>
         </div>
       </div>
-      <button
-        className="bg-gradient-to-tr from-[#F6FBFF] to-[rgba(0,0,0,0.15)] rounded-3xl p-2 shadow hover:cursor-pointer transition-all duration-200"
-        onClick={() => setSoundOn((prev) => !prev)}
-        type="button"
-      >
-        <Image
-          src={soundOn ? "/music-note-01.svg" : "/music-note-02.svg"}
-          alt="sound"
-          width={18}
-          height={18}
-        />
-      </button>
+      <div className="flex items-center gap-2">
+        {onUseHint && (
+          <button
+            className={`bg-gradient-to-tr from-[#F6FBFF] to-[rgba(0,0,0,0.15)] rounded-3xl p-2 shadow transition-all duration-200 flex items-center gap-1 ${
+              hintsRemaining > 0 
+                ? "hover:cursor-pointer hover:shadow-md" 
+                : "opacity-40 cursor-not-allowed"
+            }`}
+            onClick={handleHintClick}
+            disabled={hintsRemaining === 0}
+            type="button"
+            title={`${hintsRemaining} hints remaining`}
+          >
+            <svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span className="text-xs font-bold">{hintsRemaining}</span>
+          </button>
+        )}
+        <button
+          className="bg-gradient-to-tr from-[#F6FBFF] to-[rgba(0,0,0,0.15)] rounded-3xl p-2 shadow hover:cursor-pointer transition-all duration-200"
+          onClick={() => setSoundOn((prev) => !prev)}
+          type="button"
+        >
+          <Image
+            src={soundOn ? "/music-note-01.svg" : "/music-note-02.svg"}
+            alt="sound"
+            width={18}
+            height={18}
+          />
+        </button>
+      </div>
     </div>
   );
 }

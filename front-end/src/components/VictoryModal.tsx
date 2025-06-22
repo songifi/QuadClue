@@ -1,50 +1,100 @@
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface VictoryModalProps {
   open: boolean;
   onClose: () => void;
+  onNextPuzzle: () => void;
   answer: string;
   score: number;
   coins: number;
+  isGameComplete?: boolean;
+  level: number;
+  puzzlesSolved: number;
+  totalPuzzles: number;
+  timeUsed?: number;
+  hintsUsed?: number;
 }
 
 export default function VictoryModal({
   open,
   onClose,
+  onNextPuzzle,
   answer,
   score,
   coins,
+  isGameComplete = false,
+  level,
+  puzzlesSolved,
+  totalPuzzles,
+  timeUsed = 0,
+  hintsUsed = 0,
 }: VictoryModalProps) {
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setShowCelebration(true);
+      const timer = setTimeout(() => setShowCelebration(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const handleContinue = () => {
+    if (isGameComplete) {
+      onClose();
+    } else {
+      onNextPuzzle();
+      onClose();
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="flex flex-col items-center w-full max-w-xs mx-auto">
-        {/* AWESOME! text */}
+        {/* Celebration animation */}
+        {showCelebration && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="animate-bounce text-6xl">🎉</div>
+          </div>
+        )}
+
+        {/* Main title */}
         <div
           className="text-[2.5rem] leading-none font-extrabold text-[#1A1A1A] text-center mb-1 font-bricolage"
           style={{
             textShadow: "0 4px 8px rgba(0,0,0,0.2)",
           }}
         >
-          AWESOME!
+          {isGameComplete ? "GAME COMPLETE!" : "AWESOME!"}
         </div>
 
         {/* Subtitle */}
         <div className="text-center text-[#1A1A1A] font-semibold text-sm mb-4 font-bricolage">
-          You found the word..
+          {isGameComplete 
+            ? "You solved all puzzles!" 
+            : "You found the word.."
+          }
         </div>
 
-        {/* Orange card container replaced with board.svg */}
+        {/* Main board container */}
         <div
           className="relative w-full flex justify-center items-center mb-4"
-          style={{ minHeight: 240 }}
+          style={{ minHeight: 280 }}
         >
-          {/* Overlay white-board.svg above board.svg */}
           <Image
             src="/board.svg"
             alt="Board background"
             fill
-            style={{ objectFit: "contain", zIndex: 0, maxHeight: 260 }}
+            style={{ objectFit: "contain", zIndex: 0, maxHeight: 300 }}
             className="rounded-2xl select-none pointer-events-none"
             priority
           />
@@ -55,7 +105,7 @@ export default function VictoryModal({
             style={{
               objectFit: "none",
               zIndex: 1,
-              maxHeight: 180,
+              maxHeight: 200,
               pointerEvents: "none",
               top: "58%",
               left: "50%",
@@ -65,28 +115,19 @@ export default function VictoryModal({
             className="rounded-2xl select-none absolute"
             priority
           />
+
           <div className="absolute inset-0 flex flex-col justify-center items-center px-4 py-4 z-10 w-full h-full">
             {/* Close button */}
             <button
               onClick={onClose}
               className="absolute top-9 right-6 w-2 h-3 flex items-center justify-center rounded-full focus:outline-none z-20 hover:cursor-pointer"
               aria-label="Close"
-              style={{ boxShadow: "0 2px 8px #0002", padding: 0 }}
             >
-              <Image
-                src="/close.svg"
-                alt="Close"
-                width={20}
-                height={20}
-                style={{ display: "block" }}
-              />
+              <Image src="/close.svg" alt="Close" width={20} height={20} />
             </button>
 
-            {/* VICTORY badge replaced with victory-board.svg */}
-            <div
-              className="relative flex justify-center items-center w-full mb-46"
-              style={{ minHeight: 56 }}
-            >
+            {/* Victory badge */}
+            <div className="relative flex justify-center items-center w-full mb-4">
               <Image
                 src="/victory-board.svg"
                 alt="Victory board"
@@ -94,66 +135,54 @@ export default function VictoryModal({
                 height={56}
                 className="select-none"
                 priority
-                style={{ marginTop: "-8px" }}
               />
-              <span
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-bold tracking-wide text-lg drop-shadow-md font-bricolage"
-                style={{ letterSpacing: "0.04em", marginTop: "-2px" }}
-              >
-                VICTORY
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-bold tracking-wide text-lg drop-shadow-md font-bricolage">
+                {isGameComplete ? "COMPLETE!" : "VICTORY"}
               </span>
             </div>
 
-            {/* Score sections */}
+            {/* Stats Grid */}
             <div className="absolute left-0 top-3 w-full h-full flex flex-col items-center justify-center pointer-events-none">
-              <div
-                style={{
-                  position: "absolute",
-                  top: "38%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "75%",
-                }}
-                className="flex flex-col items-center w-full"
-              >
-                <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
-                  Your Score
-                </span>
-                <div
-                  className="bg-[#00FFC21F] rounded-[12px] flex flex-col items-center border border-[#D6E3EA] w-full justify-center"
-                  style={{ minHeight: 44, marginBottom: 12 }}
-                >
-                  <span className="text-[1.5rem] font-extrabold text-[#1A1A1A] leading-none font-jetbrains">
-                    {score}
+              {/* Score Section */}
+              <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 w-[75%]">
+                <div className="text-center mb-2">
+                  <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
+                    Score
                   </span>
+                  <div className="bg-[#00FFC21F] rounded-[12px] flex items-center justify-center border border-[#D6E3EA] py-2">
+                    <span className="text-2xl font-extrabold text-[#1A1A1A] font-jetbrains">
+                      {score.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div
-                style={{
-                  position: "absolute",
-                  top: "65%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "75%",
-                }}
-                className="flex flex-col items-center w-full"
-              >
-                <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
-                  Your Score
-                </span>
-                <div className="bg-[#00FFC21F] rounded-[12px] py-2 flex flex-col items-center border border-[#D6E3EA] w-full justify-center">
-                  <span className="flex items-center gap-1 text-[1.5rem] font-extrabold text-[#FFC300] leading-none font-jetbrains">
-                    <Image
-                      src="/star.svg"
-                      alt="star"
-                      width={22}
-                      height={22}
-                      className="inline-block -mt-0.5"
-                    />
-                    <span className="text-[#1A1A1A] font-extrabold text-[1.5rem] font-jetbrains">
+
+              {/* Coins Section */}
+              <div className="absolute top-[55%] left-1/2 transform -translate-x-1/2 w-[75%]">
+                <div className="text-center mb-2">
+                  <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
+                    Coins
+                  </span>
+                  <div className="bg-[#00FFC21F] rounded-[12px] flex items-center justify-center border border-[#D6E3EA] py-2">
+                    <span className="flex items-center gap-2 text-xl font-extrabold text-[#1A1A1A] font-jetbrains">
+                      <Image src="/star.svg" alt="star" width={20} height={20} />
                       {coins}
                     </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Section */}
+              <div className="absolute top-[75%] left-1/2 transform -translate-x-1/2 w-[75%]">
+                <div className="text-center">
+                  <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
+                    Progress
                   </span>
+                  <div className="bg-[#00FFC21F] rounded-[12px] flex items-center justify-center border border-[#D6E3EA] py-2">
+                    <span className="text-sm font-bold text-[#1A1A1A] font-jetbrains">
+                      {puzzlesSolved}/{totalPuzzles} • Level {level}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -161,7 +190,7 @@ export default function VictoryModal({
         </div>
 
         {/* Answer tiles */}
-        <div className="flex justify-center gap-1 mb-6">
+        <div className="flex justify-center gap-1 mb-4">
           {answer.split("").map((char, i) => (
             <div
               key={i}
@@ -172,12 +201,20 @@ export default function VictoryModal({
           ))}
         </div>
 
+        {/* Performance Stats */}
+        {!isGameComplete && (
+          <div className="flex justify-between w-full text-xs text-gray-600 mb-4 px-2">
+            <span>Time: {formatTime(timeUsed)}</span>
+            <span>Hints: {hintsUsed}/3</span>
+          </div>
+        )}
+
         {/* Continue button */}
         <button
-          className="w-full bg-[#FF8C00] text-white font-bold rounded-xl py-4 text-lg shadow-lg hover:cursor-pointer"
-          onClick={onClose}
+          className="w-full bg-[#FF8C00] text-white font-bold rounded-xl py-4 text-lg shadow-lg hover:cursor-pointer transition-colors hover:bg-[#e67e00]"
+          onClick={handleContinue}
         >
-          CONTINUE
+          {isGameComplete ? "FINISH" : "NEXT PUZZLE"}
         </button>
       </div>
     </div>
