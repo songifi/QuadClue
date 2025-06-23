@@ -1,5 +1,15 @@
 import { GameResult } from "@/types/game";
 
+// Player statistics returned by getPlayerStats Cairo system
+export interface PlayerStats {
+  score: number;           // lifetime score
+  coins: number;           // lifetime coins
+  puzzlesSolved: number;   // total solved
+  totalAttempts: number;   // total guesses
+  level: number;           // derived or stored on chain
+  // add any other fields your contract returns
+}
+
 export interface UserProfile {
   username: string;
   age: number;

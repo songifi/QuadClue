@@ -125,7 +125,7 @@ export default function ProfilePage() {
                   Your Username
                 </div>
                 <div className="bg-[#00FFC21F] rounded-[8px] flex flex-col items-center border border-[#D6E3EA] w-52 justify-center text-[#1A1A1A] font-bricolage font-bold text-lg">
-                  OSATUYIPIKIN
+                  PLAYER123
                 </div>
               </div>
               <div>

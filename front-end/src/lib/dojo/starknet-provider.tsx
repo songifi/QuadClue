@@ -3,9 +3,10 @@ import { mainnet } from "@starknet-react/chains";
 import { jsonRpcProvider, StarknetConfig, voyager } from "@starknet-react/core";
 import { dojoConfig } from "./dojoConfig";
 import { usePredeployedAccounts } from "@dojoengine/predeployed-connector/react";
+import { cartridgeConnector } from "./cartridgeConnector";
 
 export default function StarknetProvider({ children }: PropsWithChildren) {
-    const { connectors } = usePredeployedAccounts({
+    const { connectors: predeployed } = usePredeployedAccounts({
         rpc: dojoConfig.rpcUrl as string,
         id: "katana",
         name: "Katana",
@@ -19,7 +20,7 @@ export default function StarknetProvider({ children }: PropsWithChildren) {
         <StarknetConfig
             chains={[mainnet]}
             provider={provider}
-            connectors={connectors}
+            connectors={[cartridgeConnector, ...predeployed]}
             explorer={voyager}
             autoConnect
         >

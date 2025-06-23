@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { PlayerStats } from "@/types/user";
 
 interface VictoryModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface VictoryModalProps {
   totalPuzzles: number;
   timeUsed?: number;
   hintsUsed?: number;
+  playerStats?: PlayerStats | null; // new
 }
 
 export default function VictoryModal({
@@ -29,6 +31,7 @@ export default function VictoryModal({
   totalPuzzles,
   timeUsed = 0,
   hintsUsed = 0,
+  playerStats,
 }: VictoryModalProps) {
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -147,12 +150,21 @@ export default function VictoryModal({
               <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 w-[75%]">
                 <div className="text-center mb-2">
                   <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
-                    Score
+                    {playerStats ? "Total Score" : "Score"}
                   </span>
                   <div className="bg-[#00FFC21F] rounded-[12px] flex items-center justify-center border border-[#D6E3EA] py-2">
-                    <span className="text-2xl font-extrabold text-[#1A1A1A] font-jetbrains">
-                      {score.toLocaleString()}
-                    </span>
+                    {playerStats ? (
+                      <span className="text-2xl font-extrabold text-[#1A1A1A] font-jetbrains">
+                        {playerStats.score.toLocaleString()}
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-extrabold text-[#1A1A1A] font-jetbrains">
+                          {score.toLocaleString()}
+                        </span>
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -161,12 +173,12 @@ export default function VictoryModal({
               <div className="absolute top-[55%] left-1/2 transform -translate-x-1/2 w-[75%]">
                 <div className="text-center mb-2">
                   <span className="text-xs text-[#8A9BA8] font-semibold tracking-wide font-jetbrains">
-                    Coins
+                    {playerStats ? "Total Coins" : "Coins"}
                   </span>
                   <div className="bg-[#00FFC21F] rounded-[12px] flex items-center justify-center border border-[#D6E3EA] py-2">
                     <span className="flex items-center gap-2 text-xl font-extrabold text-[#1A1A1A] font-jetbrains">
                       <Image src="/star.svg" alt="star" width={20} height={20} />
-                      {coins}
+                      {playerStats ? playerStats.coins : coins}
                     </span>
                   </div>
                 </div>
@@ -179,9 +191,15 @@ export default function VictoryModal({
                     Progress
                   </span>
                   <div className="bg-[#00FFC21F] rounded-[12px] flex items-center justify-center border border-[#D6E3EA] py-2">
-                    <span className="text-sm font-bold text-[#1A1A1A] font-jetbrains">
-                      {puzzlesSolved}/{totalPuzzles} • Level {level}
-                    </span>
+                    {playerStats ? (
+                      <span className="text-sm font-bold text-[#1A1A1A] font-jetbrains">
+                        {playerStats.puzzlesSolved}/{playerStats.totalAttempts} solved • Level {playerStats.level}
+                      </span>
+                    ) : (
+                      <span className="text-sm font-bold text-[#1A1A1A] font-jetbrains">
+                        {puzzlesSolved}/{totalPuzzles} • Level {level}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

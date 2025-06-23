@@ -4,6 +4,8 @@ import { useAccount } from '@starknet-react/core';
 import { WalletAccount } from '@/lib/dojo';
 import { useEffect, useState, useRef } from 'react';
 import React from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ROUTES } from '@/lib/constants';
 
 interface WalletConnectionGuardProps {
   children: React.ReactNode;
@@ -12,6 +14,8 @@ interface WalletConnectionGuardProps {
 export const WalletConnectionGuard = React.memo(({ children }: WalletConnectionGuardProps) => {
   const { address, isConnected } = useAccount();
   const [hasAttemptedConnection, setHasAttemptedConnection] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Use ref to track previous values for debugging
   const prevValuesRef = useRef({
@@ -36,6 +40,11 @@ export const WalletConnectionGuard = React.memo(({ children }: WalletConnectionG
     }
   }, [isConnected, address]);
 
+  // Allow access to signup page without connection
+  if (pathname === ROUTES.SIGNUP) {
+    return <>{children}</>;
+  }
+
   // Show connection screen if not connected
   if (!isConnected) {
     return (
@@ -57,8 +66,24 @@ export const WalletConnectionGuard = React.memo(({ children }: WalletConnectionG
             </p>
           </div>
 
-          {/* Wallet Connection */}
+          {/* Quick Signup Option */}
+          <div className="mb-6">
+            <button
+              onClick={() => router.push(ROUTES.SIGNUP)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-colors mb-4"
+            >
+              🚀 New Player? Quick Signup with Username
+            </button>
+            <p className="text-center text-gray-400 text-sm">
+              Get started instantly with just a username
+            </p>
+          </div>
+
+          {/* Traditional Wallet Connection */}
           <div className="space-y-4">
+            <div className="text-center text-gray-400 text-sm">
+              OR connect with existing wallet
+            </div>
             <WalletAccount />
             
             <div className="text-xs text-gray-500 space-y-1">

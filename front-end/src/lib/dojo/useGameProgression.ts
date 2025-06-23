@@ -1,8 +1,19 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePuzzles } from '@/lib/dojo/usePuzzles';
 import { useSystemCalls } from '@/lib/dojo/useSystemCalls';
+import { useGuessSubmittedEvents } from '@/lib/dojo/useGuessSubmittedEvents';
 import { GAME_CONFIG } from '@/lib/constants';
 import toast from 'react-hot-toast';
+
+// PHASE 2: Pending Submission Interface
+interface PendingSubmission {
+  id: string;              // unique submission ID
+  puzzleId: number;        // which puzzle
+  guess: string;           // what was guessed
+  timestamp: number;       // when submitted
+  resolved: boolean;       // whether we found a matching event
+  timeoutId?: NodeJS.Timeout; // for timeout handling
+}
 
 interface GameState {
   currentPuzzleIndex: number;
@@ -13,6 +24,9 @@ interface GameState {
   totalAttempts: number;
   completedPuzzles: Set<string>;
   gameComplete: boolean;
+  // PHASE 2: New submission tracking states
+  isSubmitting: boolean;
+  pendingSubmissions: PendingSubmission[];
 }
 
 interface GameProgressionHook {
@@ -26,6 +40,13 @@ interface GameProgressionHook {
   resetGame: () => void;
   getDifficultyMultiplier: () => number;
   getScoreForPuzzle: (timeUsed?: number, hintsUsed?: number) => number;
+  // PHASE 2: New submission state accessors
+  isSubmitting: boolean;
+  pendingSubmissions: PendingSubmission[];
+  // Victory callback
+  onVictory?: (submission: PendingSubmission) => void;
+  // Incorrect answer callback
+  onIncorrectAnswer?: (submission: PendingSubmission) => void;
 }
 
 // Utility to convert felt252 to ASCII
@@ -48,9 +69,22 @@ function felt252ToAscii(felt: string | number): string {
   }
 }
 
-export function useGameProgression(): GameProgressionHook {
+export function useGameProgression(onVictory?: (submission: PendingSubmission) => void, onIncorrectAnswer?: (submission: PendingSubmission) => void): GameProgressionHook {
   const { puzzles, isLoading } = usePuzzles();
-  const { submitGuess, getCurrentPlayerStats } = useSystemCalls();
+  const { submitGuess, getCurrentPlayerStats, account } = useSystemCalls();
+  
+  // PHASE 1: Subscribe to GuessSubmitted events
+  const guessEvents = useGuessSubmittedEvents();
+  
+  // Debug logging for event subscription
+  useEffect(() => {
+    console.log('🔔 Event Subscription Status:', {
+      isSubscribed: guessEvents.isSubscribed,
+      totalEvents: guessEvents.totalEvents,
+      latestEvent: guessEvents.latestEvent,
+      accountAddress: account?.address
+    });
+  }, [guessEvents.isSubscribed, guessEvents.totalEvents, guessEvents.latestEvent, account?.address]);
   
   // Initialize game state from localStorage or defaults
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -60,7 +94,10 @@ export function useGameProgression(): GameProgressionHook {
         const parsed = JSON.parse(saved);
         return {
           ...parsed,
-          completedPuzzles: new Set(parsed.completedPuzzles || [])
+          completedPuzzles: new Set(parsed.completedPuzzles || []),
+          // PHASE 2: Initialize submission states (don't persist these)
+          isSubmitting: false,
+          pendingSubmissions: []
         };
       }
     }
@@ -72,7 +109,10 @@ export function useGameProgression(): GameProgressionHook {
       hintsUsed: 0,
       totalAttempts: 0,
       completedPuzzles: new Set<string>(),
-      gameComplete: false
+      gameComplete: false,
+      // PHASE 2: Initialize submission states
+      isSubmitting: false,
+      pendingSubmissions: []
     };
   });
 
@@ -97,7 +137,12 @@ export function useGameProgression(): GameProgressionHook {
       const toSave = {
         ...gameState,
         completedPuzzles: Array.from(gameState.completedPuzzles)
+        // PHASE 2: Don't persist submission states
       };
+      // Remove submission states from storage
+      delete (toSave as any).isSubmitting;
+      delete (toSave as any).pendingSubmissions;
+      
       localStorage.setItem('quadclue-game-state', JSON.stringify(toSave));
     }
   }, [gameState]);
@@ -162,9 +207,217 @@ export function useGameProgression(): GameProgressionHook {
     return true;
   }, [currentPuzzle, availableLetters]);
 
-  // Submit answer to blockchain and handle result
+  // PHASE 2: Submission Management Functions
+  const generateSubmissionId = useCallback(() => {
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  }, []);
+
+  const addPendingSubmission = useCallback((puzzleId: number, guess: string) => {
+    const submissionId = generateSubmissionId();
+    
+    const newSubmission: PendingSubmission = {
+      id: submissionId,
+      puzzleId,
+      guess,
+      timestamp: Math.floor(Date.now() / 1000),
+      resolved: false
+    };
+
+    // Add timeout handling (10 seconds)
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Submission timeout for:', submissionId);
+      setGameState(prev => ({
+        ...prev,
+        pendingSubmissions: prev.pendingSubmissions.filter(s => s.id !== submissionId),
+        isSubmitting: prev.pendingSubmissions.length <= 1 // false if this was the last one
+      }));
+      toast.error('Transaction timeout. Please try again.');
+    }, 10000);
+
+    newSubmission.timeoutId = timeoutId;
+
+    setGameState(prev => ({
+      ...prev,
+      isSubmitting: true,
+      pendingSubmissions: [...prev.pendingSubmissions, newSubmission]
+    }));
+
+    console.log('📝 Added pending submission:', {
+      id: submissionId,
+      puzzleId,
+      guess,
+      totalPending: gameState.pendingSubmissions.length + 1
+    });
+
+    return submissionId;
+  }, [generateSubmissionId, gameState.pendingSubmissions.length]);
+
+  const removePendingSubmission = useCallback((submissionId: string) => {
+    setGameState(prev => {
+      const submission = prev.pendingSubmissions.find(s => s.id === submissionId);
+      if (submission?.timeoutId) {
+        clearTimeout(submission.timeoutId);
+      }
+
+      const updatedPending = prev.pendingSubmissions.filter(s => s.id !== submissionId);
+      
+      return {
+        ...prev,
+        pendingSubmissions: updatedPending,
+        isSubmitting: updatedPending.length > 0
+      };
+    });
+
+    console.log('✅ Removed pending submission:', submissionId);
+  }, []);
+
+  // PHASE 3: Event Processing Functions
+  const handleCorrectGuess = useCallback((submission: PendingSubmission) => {
+    console.log('🎉 Processing correct guess:', submission);
+    
+    // Calculate score and coins
+    const puzzleScore = getScoreForPuzzle(0, gameState.hintsUsed);
+    const coinsEarned = Math.floor(puzzleScore / 100);
+    
+    console.log("🎯 Correct answer rewards:", {
+      puzzleScore,
+      coinsEarned,
+      hintsUsed: gameState.hintsUsed
+    });
+    
+    // Update game state
+    setGameState(prev => ({
+      ...prev,
+      score: prev.score + puzzleScore,
+      coins: prev.coins + coinsEarned,
+      completedPuzzles: new Set([...prev.completedPuzzles, currentPuzzle?.entityId]),
+      hintsUsed: 0 // Reset hints for next puzzle
+    }));
+    
+    // Trigger victory modal
+    if (onVictory) {
+      onVictory(submission);
+    }
+    
+    toast.success(`🎉 Correct! +${puzzleScore} points, +${coinsEarned} coins`);
+  }, [getScoreForPuzzle, gameState.hintsUsed, currentPuzzle?.entityId, onVictory]);
+
+  const handleIncorrectGuess = useCallback((submission: PendingSubmission) => {
+    console.log('❌ Processing incorrect guess:', submission);
+    
+    // Trigger incorrect answer modal
+    if (onIncorrectAnswer) {
+      onIncorrectAnswer(submission);
+    }
+    
+    toast.error(`❌ "${submission.guess}" is incorrect. Try again!`);
+  }, [onIncorrectAnswer]);
+
+  const processGuessEvent = useCallback((event: any, matchedSubmission: PendingSubmission) => {
+    console.log('🔄 === PHASE 3 PROCESSING EVENT ===');
+    console.log('📝 Event details:', {
+      puzzle_id: event.puzzle_id,
+      is_correct: event.is_correct,
+      player: event.player,
+      timestamp: event.timestamp
+    });
+    console.log('📝 Matched submission:', {
+      id: matchedSubmission.id,
+      puzzleId: matchedSubmission.puzzleId,
+      guess: matchedSubmission.guess,
+      timestamp: matchedSubmission.timestamp,
+      resolved: matchedSubmission.resolved
+    });
+
+    // Mark submission as resolved before processing
+    setGameState(prev => ({
+      ...prev,
+      pendingSubmissions: prev.pendingSubmissions.map(s => 
+        s.id === matchedSubmission.id ? { ...s, resolved: true } : s
+      )
+    }));
+
+    // Remove from pending submissions
+    removePendingSubmission(matchedSubmission.id);
+
+    // Process based on correctness
+    if (event.is_correct) {
+      handleCorrectGuess(matchedSubmission);
+    } else {
+      handleIncorrectGuess(matchedSubmission);
+    }
+
+    console.log('🔄 === PHASE 3 EVENT PROCESSED ===');
+  }, [removePendingSubmission, handleCorrectGuess, handleIncorrectGuess]);
+
+  // PHASE 3: Event Matching Effect
+  useEffect(() => {
+    if (!guessEvents.latestEvent || gameState.pendingSubmissions.length === 0) {
+      return;
+    }
+
+    console.log('🔍 === PHASE 3 EVENT MATCHING START ===');
+    console.log('📊 Current state:', {
+      latestEventTimestamp: guessEvents.latestEvent.timestamp,
+      pendingSubmissions: gameState.pendingSubmissions.length,
+      pendingDetails: gameState.pendingSubmissions.map(s => ({
+        id: s.id,
+        puzzleId: s.puzzleId,
+        guess: s.guess,
+        timestamp: s.timestamp,
+        resolved: s.resolved
+      }))
+    });
+
+    // Try to match the latest event with pending submissions
+    for (const submission of gameState.pendingSubmissions) {
+      const matchingEvent = guessEvents.findEventForSubmission(submission);
+      
+      if (matchingEvent) {
+        console.log('✅ Found matching event for submission:', {
+          submissionId: submission.id,
+          eventPuzzleId: matchingEvent.puzzle_id,
+          eventIsCorrect: matchingEvent.is_correct
+        });
+        
+        processGuessEvent(matchingEvent, submission);
+        break; // Process one event at a time
+      }
+    }
+
+    console.log('🔍 === PHASE 3 EVENT MATCHING END ===');
+  }, [guessEvents.latestEvent, gameState.pendingSubmissions, guessEvents.findEventForSubmission, processGuessEvent]);
+
+  // PHASE 2: Submit answer with pending submission tracking
   const submitAnswer = useCallback(async (guess: string) => {
-    if (!currentPuzzle) {
+    console.log("🎯 === PHASE 2 SUBMIT ANSWER START ===");
+    console.log("📝 Input parameters:", {
+      guess,
+      currentPuzzle: currentPuzzle ? {
+        id: currentPuzzle.id,
+        entityId: currentPuzzle.entityId,
+        word_length: currentPuzzle.word_length
+      } : null,
+      accountAddress: account?.address,
+      isCurrentlySubmitting: gameState.isSubmitting,
+      pendingCount: gameState.pendingSubmissions.length
+    });
+
+    if (!currentPuzzle || !account?.address) {
+      console.error("❌ Missing requirements:", {
+        hasCurrentPuzzle: !!currentPuzzle,
+        hasAccount: !!account?.address
+      });
+      return { success: false, isCorrect: false };
+    }
+
+    // Prevent multiple simultaneous submissions for the same puzzle
+    const puzzleId = currentPuzzle.id || currentPuzzle.entityId;
+    const hasPendingForPuzzle = gameState.pendingSubmissions.some(s => s.puzzleId === puzzleId);
+    
+    if (hasPendingForPuzzle) {
+      console.log("⚠️ Already have pending submission for this puzzle");
+      toast.error('Please wait for the previous submission to complete');
       return { success: false, isCorrect: false };
     }
 
@@ -175,38 +428,55 @@ export function useGameProgression(): GameProgressionHook {
     }));
 
     try {
-      // Submit to blockchain
-      const result = await submitGuess(currentPuzzle.id || currentPuzzle.entityId, guess);
+      // PHASE 2: Add to pending submissions BEFORE contract call
+      const submissionId = addPendingSubmission(puzzleId, guess);
       
-      // The contract returns a boolean indicating if the guess was correct
-      const isCorrect = Boolean(result);
+      console.log(`🚀 Submitting guess to contract:`, {
+        submissionId,
+        guess,
+        puzzleId,
+        guessLength: guess.length,
+        expectedLength: currentPuzzle.word_length
+      });
       
-      if (isCorrect) {
-        // Calculate score and coins
-        const puzzleScore = getScoreForPuzzle(0, gameState.hintsUsed);
-        const coinsEarned = Math.floor(puzzleScore / 100);
-        
-        // Update game state
-        setGameState(prev => ({
-          ...prev,
-          score: prev.score + puzzleScore,
-          coins: prev.coins + coinsEarned,
-          completedPuzzles: new Set([...prev.completedPuzzles, currentPuzzle.entityId]),
-          hintsUsed: 0 // Reset hints for next puzzle
-        }));
-        
-        toast.success(`Correct! +${puzzleScore} points, +${coinsEarned} coins`);
-      } else {
-        toast.error('Incorrect guess. Try again!');
+      // Submit to blockchain - DON'T expect return value, wait for event
+      console.log("⏳ Calling submitGuess...");
+      const transactionResult = await submitGuess(puzzleId, guess);
+      
+      console.log(`📤 Transaction submitted:`, {
+        transactionResult,
+        resultType: typeof transactionResult,
+        submissionId
+      });
+
+      // PHASE 2: Transaction submitted successfully
+      // The actual correctness will be determined by the GuessSubmitted event
+      toast.success('Guess submitted! Waiting for blockchain confirmation...');
+      
+      const result = { success: true, isCorrect: false }; // isCorrect will be determined by event
+      console.log("🎯 === PHASE 2 SUBMIT ANSWER END ===");
+      
+      return result;
+      
+    } catch (error) {
+      console.error('💥 Submit answer error:', error);
+      console.error('💥 Error details:', {
+        message: (error as any)?.message,
+        stack: (error as any)?.stack,
+        name: (error as any)?.name
+      });
+      
+      // PHASE 2: Remove from pending on error
+      const submissionToRemove = gameState.pendingSubmissions.find(s => s.puzzleId === puzzleId);
+      if (submissionToRemove) {
+        removePendingSubmission(submissionToRemove.id);
       }
       
-      return { success: true, isCorrect };
-    } catch (error) {
-      console.error('Submit answer error:', error);
       toast.error('Failed to submit answer');
+      console.log("🎯 === PHASE 2 SUBMIT ANSWER END (ERROR) ===");
       return { success: false, isCorrect: false };
     }
-  }, [currentPuzzle, submitGuess, getScoreForPuzzle, gameState.hintsUsed]);
+  }, [currentPuzzle, submitGuess, account?.address, gameState.isSubmitting, gameState.pendingSubmissions, addPendingSubmission, removePendingSubmission]);
 
   // Move to next puzzle
   const nextPuzzle = useCallback(() => {
@@ -272,7 +542,9 @@ export function useGameProgression(): GameProgressionHook {
       hintsUsed: 0,
       totalAttempts: 0,
       completedPuzzles: new Set(),
-      gameComplete: false
+      gameComplete: false,
+      isSubmitting: false,
+      pendingSubmissions: []
     };
     
     setGameState(newState);
@@ -294,6 +566,10 @@ export function useGameProgression(): GameProgressionHook {
     useHint,
     resetGame,
     getDifficultyMultiplier,
-    getScoreForPuzzle
+    getScoreForPuzzle,
+    isSubmitting: gameState.isSubmitting,
+    pendingSubmissions: gameState.pendingSubmissions,
+    onVictory,
+    onIncorrectAnswer
   };
 }

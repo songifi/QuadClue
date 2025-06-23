@@ -2,6 +2,7 @@ import { useAccount } from "@starknet-react/core";
 import { useDojoSDK } from "@dojoengine/sdk/react";
 import { BigNumberish, ByteArray } from "starknet";
 import { PuzzleData } from "@/types/game";
+import { PlayerStats } from "@/types/user";
 import toast from "react-hot-toast";
 import { useEffect, useMemo, useCallback, useRef } from "react";
 import { getEntityIdFromKeys } from "@dojoengine/utils";
@@ -133,26 +134,52 @@ export function useSystemCalls() {
 
   // Memoize submit guess function
   const submitGuess = useCallback(async (puzzleId: BigNumberish, guess: string) => {
+    console.log("🔧 === SUBMIT GUESS (useSystemCalls) START ===");
+    console.log("🔧 Input parameters:", {
+      puzzleId,
+      guess,
+      puzzleIdType: typeof puzzleId,
+      hasWorkingAccount: !!workingAccount,
+      workingAccountAddress: workingAccount?.address,
+      hasWorldActions: !!worldActions,
+      hasSubmitGuessAction: !!worldActions?.actions?.submitGuess
+    });
+
     if (!workingAccount) {
+      console.error("🔧 ❌ No working account");
       toast.error("Please connect your wallet");
-      return;
+      return false;
     }
 
     if (!worldActions?.actions?.submitGuess) {
+      console.error("🔧 ❌ World actions not initialized");
       toast.error("World actions not initialized");
-      return;
+      return false;
     }
 
     const transactionId = uuidv4();
+    console.log("🔧 🆔 Transaction ID:", transactionId);
 
     try {
       toast.loading("Submitting guess...", { id: "submit-guess" });
       
       const byteArrayGuess = stringToByteArray(guess);
+      console.log("🔧 📝 Converted guess to ByteArray:", {
+        originalGuess: guess,
+        byteArrayGuess,
+        byteArrayType: typeof byteArrayGuess
+      });
       
       // Apply optimistic update
       state.applyOptimisticUpdate(transactionId, (draft) => {
-        console.log('Applied optimistic update for guess submission');
+        console.log('🔧 ⚡ Applied optimistic update for guess submission');
+      });
+
+      console.log("🔧 🚀 Calling contract submitGuess...");
+      console.log("🔧 📤 Contract call parameters:", {
+        account: workingAccount.address,
+        puzzleId,
+        guess: byteArrayGuess
       });
 
       // Use the generated world actions
@@ -162,15 +189,34 @@ export function useSystemCalls() {
         byteArrayGuess
       );
       
+      console.log("🔧 📥 Contract call result:", {
+        result,
+        resultType: typeof result,
+        isBoolean: typeof result === 'boolean',
+        isTruthy: !!result,
+        fullResult: result
+      });
+      
       toast.success("Guess submitted!", { id: "submit-guess" });
+      console.log("🔧 ✅ Guess submitted successfully");
+      console.log("🔧 === SUBMIT GUESS (useSystemCalls) END ===");
+      
       return result;
     } catch (error) {
-      console.error("Submit guess error:", error);
+      console.error("🔧 💥 Submit guess error:", error);
+      console.error("🔧 💥 Error details:", {
+        message: (error as any)?.message,
+        stack: (error as any)?.stack,
+        name: (error as any)?.name,
+        fullError: error
+      });
       state.revertOptimisticUpdate(transactionId);
       toast.error("Failed to submit guess", { id: "submit-guess" });
+      console.log("🔧 === SUBMIT GUESS (useSystemCalls) END (ERROR) ===");
       throw error;
     } finally {
       state.confirmTransaction(transactionId);
+      console.log("🔧 🏁 Transaction confirmed");
     }
   }, [workingAccount, worldActions, stringToByteArray, state]);
 
@@ -266,11 +312,39 @@ export function useSystemCalls() {
   }, [worldActions]);
 
   // Memoize get current player stats function
-  const getCurrentPlayerStats = useCallback(async () => {
+  const getCurrentPlayerStats = useCallback(async (): Promise<PlayerStats | null> => {
     if (!workingAccount?.address) {
       return null;
     }
-    return getPlayerStats(workingAccount.address);
+    
+    try {
+      const rawStats = await getPlayerStats(workingAccount.address);
+      if (!rawStats) return null;
+      
+      // Log the raw struct once for verification
+      console.log('📦 rawStats', rawStats);
+
+      const stats = rawStats as any;
+
+      // Compute helper values
+      const puzzlesSolved = Number(stats?.puzzles_solved ?? stats?.puzzlesSolved ?? 0);
+      const coinsEarned   = Number(stats?.tokens_earned ?? stats?.coins ?? 0);
+
+      return {
+        // Front-end calculated score: 100 points per puzzle solved
+        score: puzzlesSolved * 100,
+
+        // Map on-chain "tokens_earned" ↔ coins
+        coins: coinsEarned,
+
+        puzzlesSolved,
+        totalAttempts: Number(stats?.total_attempts ?? stats?.totalAttempts ?? 0),
+        level: Number(stats?.level ?? 1),
+      } as PlayerStats;
+    } catch (error) {
+      console.error("Error fetching player stats:", error);
+      return null;
+    }
   }, [workingAccount?.address, getPlayerStats]);
 
   // Memoize the return value
