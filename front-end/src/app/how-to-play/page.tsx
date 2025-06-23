@@ -58,28 +58,78 @@ export default function HowToPlayPage() {
         <div className="relative z-10 flex flex-col items-center">
           <LogoSection isAnimating={false} />
         </div>
-        <h1 className="text-3xl font-extrabold text-[#1A1A1A] text-center mb-5 z-10 font-bricolage">
-          HOW TO PLAY!
-        </h1>
-        <div className="flex flex-col justify-between gap-2 w-full max-w-xs mx-auto z-10 mb-0 md:h-[calc(100vh-350px)] font-jetbrains">
-          <div
-            className="text-left text-base font-jetbrains text-[#1A1A1A] leading-tight mb-1"
-            style={{ whiteSpace: "pre-line" }}
-          >
-            Each puzzle gives{`\n`}you three hints.
+        
+        {/* New comprehensive how-to-play content */}
+        <div className="relative z-10 w-full max-w-xs mx-auto text-[#1A1A1A] font-jetbrains">
+          
+          {/* Main Title */}
+          <h1 className="text-3xl font-extrabold text-center mb-4 font-bricolage">
+            QuadClue
+          </h1>
+          
+          <p className="text-center text-sm mb-4 font-medium">
+            <strong>QuadClue</strong> is a word puzzle game where you guess the one word that links four images.
+          </p>
+          
+          {/* How to Play Section */}
+          <h2 className="text-lg font-bold mb-3 flex items-center">
+            🎮 How to Play
+          </h2>
+          
+          <div className="space-y-2 text-sm mb-4">
+            <p>1. <strong>Look at 4 images</strong> presented on screen.</p>
+            <p>2. <strong>Guess the common word</strong> that connects all four.</p>
+            <p>3. <strong>Type your answer</strong> using the on-screen keyboard or input field.</p>
+            <p>4. <strong>Use hints</strong> if you're stuck:</p>
+            <div className="ml-4 space-y-1 text-xs">
+              <p>• <em>Reveal a letter</em></p>
+              <p>• <em>Remove wrong letters</em></p>
+              <p>• <em>Skip the puzzle</em></p>
+            </div>
           </div>
-          <div
-            className="text-right text-base font-jetbrains text-[#1A1A1A] leading-tight mb-1"
-            style={{ whiteSpace: "pre-line" }}
-          >
-            Figure out what ties{`\n`}all four pics{`\n`}together.
+          
+          {/* Example Section */}
+          <h3 className="text-base font-bold mb-2 flex items-center">
+            💡 Example
+          </h3>
+          
+          <div className="bg-white bg-opacity-50 rounded-lg p-3 mb-4 text-xs">
+            <div className="space-y-1">
+              <p>🖼️ Dog</p>
+              <p>🖼️ Cat</p>
+              <p>🖼️ Rabbit</p>
+              <p>🖼️ Parrot</p>
+              <p className="text-green-600 font-bold">✅ Answer: PET</p>
+            </div>
           </div>
-          <div
-            className="text-left text-base font-jetbrains text-[#1A1A1A] leading-tight mb-1"
-            style={{ whiteSpace: "pre-line" }}
-          >
-            Type in your answer.{`\n`}The quicker you solve, the{`\n`}higher
-            your score!
+          
+          {/* Features Section */}
+          <h3 className="text-base font-bold mb-2 flex items-center">
+            🧩 Features
+          </h3>
+          
+          <div className="space-y-1 text-xs mb-4">
+            <p>• 4-picture word puzzles</p>
+            <p>• Hundreds of levels</p>
+            <p>• Hints and help tools</p>
+            <p>• Clean, intuitive design</p>
+            <p>• Fun and educational</p>
+          </div>
+          
+          {/* Platform Section */}
+          <h3 className="text-base font-bold mb-2 flex items-center">
+            🌐 Platform
+          </h3>
+          
+          <p className="text-xs mb-6">
+            QuadClue is available on the <strong>web only</strong>.
+          </p>
+          
+          {/* Click to Start Hint */}
+          <div className="text-center">
+            <p className="text-xs text-gray-600 animate-pulse">
+              Tap anywhere to start playing!
+            </p>
           </div>
         </div>
       </div>
