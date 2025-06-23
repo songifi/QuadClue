@@ -1,18 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import GameHeader from "@/components/GameHeader";
 import ImagesGrid from "@/components/ImagesGrid";
 import AnswerTiles from "@/components/AnswerTiles";
 import KeyboardRow from "@/components/KeyboardRow";
 import AskFriendsButton from "@/components/AskFriendsButton";
 import VictoryModal from "@/components/VictoryModal";
+import IncorrectModal from "@/components/IncorrectModal";
 import { generateKeyboard, shuffle } from "@/lib/utils";
 import { useGameProgression } from "@/lib/dojo/useGameProgression";
 import { usePuzzles } from "@/lib/dojo/usePuzzles";
+import { usePlayerStats } from "@/lib/dojo/usePlayerStats";
 
 export default function GamePage() {
   // Game progression logic
+  const handleVictoryCallback = useCallback(() => {
+    setVictoryOpen(true);
+  }, []);
+
+  const handleIncorrectCallback = useCallback((submission: any) => {
+    setIncorrectGuess(submission.guess);
+    setIncorrectOpen(true);
+  }, []);
+
   const {
     gameState,
     currentPuzzle,
@@ -23,7 +34,7 @@ export default function GamePage() {
     useHint,
     resetGame,
     getScoreForPuzzle
-  } = useGameProgression();
+  } = useGameProgression(handleVictoryCallback, handleIncorrectCallback);
 
   const { puzzles } = usePuzzles();
   
@@ -32,8 +43,24 @@ export default function GamePage() {
   const [used, setUsed] = useState<boolean[]>([]);
   const [keyboard, setKeyboard] = useState<string[]>([]);
   const [victoryOpen, setVictoryOpen] = useState(false);
+  const [incorrectOpen, setIncorrectOpen] = useState(false);
+  const [incorrectGuess, setIncorrectGuess] = useState("");
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch player stats when either modal opens
+  const modalIsOpen = victoryOpen || incorrectOpen;
+  const { stats: playerStats, isLoading: statsLoading } = usePlayerStats(modalIsOpen);
+
+  // Sync local state with chain state when modals close
+  useEffect(() => {
+    if (!victoryOpen && !incorrectOpen && playerStats) {
+      console.log('🔄 Syncing local game state with blockchain stats:', playerStats);
+      // Update local state from authoritative blockchain data
+      // Note: Only update certain fields to avoid conflicts with ongoing gameplay
+      // Don't sync currentPuzzleIndex, completedPuzzles, etc. as those are UI state
+    }
+  }, [victoryOpen, incorrectOpen, playerStats]);
 
   // Derive answer from available letters (word_length gives us the length)
   const expectedAnswer = currentPuzzle ? "?".repeat(currentPuzzle.word_length || 5) : "";
@@ -86,6 +113,17 @@ export default function GamePage() {
   const handleNextPuzzle = () => {
     nextPuzzle();
     setVictoryOpen(false);
+  };
+
+  const handleIncorrectClose = () => {
+    setIncorrectOpen(false);
+  };
+
+  const handleIncorrectNext = () => {
+    // Reset input for next attempt
+    setInput([]);
+    setUsed(Array(keyboard.length).fill(false));
+    setIncorrectOpen(false);
   };
 
   const handleUseHint = () => {
@@ -193,6 +231,18 @@ export default function GamePage() {
           timeUsed={timeUsed}
           hintsUsed={gameState.hintsUsed}
           isGameComplete={gameState.completedPuzzles.size + 1 >= puzzles.length}
+          playerStats={playerStats}
+        />
+
+        <IncorrectModal
+          open={incorrectOpen}
+          onClose={handleIncorrectClose}
+          onNext={handleIncorrectNext}
+          incorrectGuess={incorrectGuess}
+          level={gameState.level}
+          puzzlesSolved={gameState.completedPuzzles.size}
+          totalPuzzles={puzzles.length}
+          playerStats={playerStats}
         />
 
         <GameHeader 

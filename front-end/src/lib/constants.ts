@@ -19,4 +19,5 @@ export const ROUTES = {
   HOW_TO_PLAY: "/how-to-play",
   GAME: "/game",
   PROFILE: "/profile",
+  SIGNUP: "/signup",
 } as const;
