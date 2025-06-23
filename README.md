@@ -5,6 +5,7 @@ A blockchain-based word puzzle game built on the Dojo engine, where players solv
 ## Table of Contents
 
 - [Overview](#overview)
+- [How to Play](#how-to-play)
 - [Prerequisites](#prerequisites)
 - [Local Development Setup](#local-development-setup)
 - [Project Structure](#project-structure)
@@ -21,6 +22,29 @@ QuadClue is a decentralized puzzle game where:
 - Players earn points and coins for correct answers
 - Game state is stored on the Starknet blockchain via Dojo
 - Features include hints, scoring system, and level progression
+
+## How to Play
+
+### Step 1: Study the Images
+- Look at all **4 pictures** carefully
+- Find the **common theme** or connection between them
+- Think about what word could describe or relate to all images
+
+### Step 2: Check the Word Length
+- Look at the **word slots** (empty boxes)
+- Count how many letters the answer has
+- This gives you a clue about the word length
+
+### Step 3: Use Available Letters
+- You'll see **12 letters** at the bottom of the screen
+- These are the **only letters** you can use to form your answer
+- **Drag and drop** or **tap** letters to spell your guess
+- You can only use each letter **once** (unless it appears multiple times)
+
+### Step 4: Submit Your Guess
+- Once you've spelled out your word, **submit your guess**
+- If correct: ✅ You earn points and solve the puzzle!
+- If wrong: ❌ Try again with different letters
 
 ## Prerequisites
 
