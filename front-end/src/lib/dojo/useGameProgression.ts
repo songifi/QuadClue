@@ -27,6 +27,8 @@ interface GameState {
   // PHASE 2: New submission tracking states
   isSubmitting: boolean;
   pendingSubmissions: PendingSubmission[];
+  // Image transition state
+  isTransitioning: boolean;
 }
 
 interface GameProgressionHook {
@@ -43,6 +45,8 @@ interface GameProgressionHook {
   // PHASE 2: New submission state accessors
   isSubmitting: boolean;
   pendingSubmissions: PendingSubmission[];
+  // Image transition state
+  isTransitioning: boolean;
   // Victory callback
   onVictory?: (submission: PendingSubmission) => void;
   // Incorrect answer callback
@@ -97,7 +101,8 @@ export function useGameProgression(onVictory?: (submission: PendingSubmission) =
           completedPuzzles: new Set(parsed.completedPuzzles || []),
           // PHASE 2: Initialize submission states (don't persist these)
           isSubmitting: false,
-          pendingSubmissions: []
+          pendingSubmissions: [],
+          isTransitioning: false
         };
       }
     }
@@ -112,7 +117,8 @@ export function useGameProgression(onVictory?: (submission: PendingSubmission) =
       gameComplete: false,
       // PHASE 2: Initialize submission states
       isSubmitting: false,
-      pendingSubmissions: []
+      pendingSubmissions: [],
+      isTransitioning: false
     };
   });
 
@@ -482,6 +488,9 @@ export function useGameProgression(onVictory?: (submission: PendingSubmission) =
   const nextPuzzle = useCallback(() => {
     if (!puzzles) return;
     
+    // Start transition
+    setGameState(prev => ({ ...prev, isTransitioning: true }));
+    
     // Find next available (uncompleted) puzzle
     let nextIndex = gameState.currentPuzzleIndex;
     let attempts = 0;
@@ -493,18 +502,26 @@ export function useGameProgression(onVictory?: (submission: PendingSubmission) =
       // If we've checked all puzzles and none are available, stay on current
       if (attempts >= puzzles.length) {
         if (gameState.completedPuzzles.size >= puzzles.length) {
-          setGameState(prev => ({ ...prev, gameComplete: true }));
+          setGameState(prev => ({ ...prev, gameComplete: true, isTransitioning: false }));
+        } else {
+          setGameState(prev => ({ ...prev, isTransitioning: false }));
         }
         return;
       }
     } while (gameState.completedPuzzles.has(puzzles[nextIndex]?.entityId));
     
+    // Update to new puzzle and end transition after a brief delay
     setGameState(prev => ({
       ...prev,
       currentPuzzleIndex: nextIndex,
       level: prev.level + 1,
       hintsUsed: 0
     }));
+    
+    // End transition after images have time to load
+    setTimeout(() => {
+      setGameState(prev => ({ ...prev, isTransitioning: false }));
+    }, 800); // 800ms should be enough for images to start loading
   }, [puzzles, gameState.currentPuzzleIndex, gameState.completedPuzzles]);
 
   // Use a hint (reveal a letter)
@@ -544,7 +561,8 @@ export function useGameProgression(onVictory?: (submission: PendingSubmission) =
       completedPuzzles: new Set(),
       gameComplete: false,
       isSubmitting: false,
-      pendingSubmissions: []
+      pendingSubmissions: [],
+      isTransitioning: false
     };
     
     setGameState(newState);
@@ -569,6 +587,7 @@ export function useGameProgression(onVictory?: (submission: PendingSubmission) =
     getScoreForPuzzle,
     isSubmitting: gameState.isSubmitting,
     pendingSubmissions: gameState.pendingSubmissions,
+    isTransitioning: gameState.isTransitioning,
     onVictory,
     onIncorrectAnswer
   };

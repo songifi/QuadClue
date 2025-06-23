@@ -12,8 +12,12 @@ import { generateKeyboard, shuffle } from "@/lib/utils";
 import { useGameProgression } from "@/lib/dojo/useGameProgression";
 import { usePuzzles } from "@/lib/dojo/usePuzzles";
 import { usePlayerStats } from "@/lib/dojo/usePlayerStats";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/constants";
 
 export default function GamePage() {
+  const router = useRouter();
+  
   // Game progression logic
   const handleVictoryCallback = useCallback(() => {
     setVictoryOpen(true);
@@ -33,7 +37,8 @@ export default function GamePage() {
     nextPuzzle,
     useHint,
     resetGame,
-    getScoreForPuzzle
+    getScoreForPuzzle,
+    isTransitioning
   } = useGameProgression(handleVictoryCallback, handleIncorrectCallback);
 
   const { puzzles } = usePuzzles();
@@ -185,12 +190,20 @@ export default function GamePage() {
             <div className="text-lg text-green-400">{gameState.coins} Coins Earned</div>
             <div className="text-sm text-gray-300">{gameState.totalAttempts} Total Attempts</div>
           </div>
-          <button
-            onClick={resetGame}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg"
-          >
-            Play Again
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push(ROUTES.HOME)}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+            >
+              Return to Home
+            </button>
+            <button
+              onClick={resetGame}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+            >
+              Play Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -252,7 +265,19 @@ export default function GamePage() {
           hintsRemaining={3 - gameState.hintsUsed}
         />
         
-        <ImagesGrid images={currentPuzzle.imageUrls || []} />
+        <ImagesGrid images={currentPuzzle.imageUrls || []} isTransitioning={isTransitioning} />
+        
+        {/* Loading overlay for transitions and submissions */}
+        {(isTransitioning || isSubmitting) && (
+          <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-20">
+            <div className="bg-white rounded-lg p-4 text-center shadow-lg">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-700">
+                {isSubmitting ? 'Processing guess...' : 'Loading next puzzle...'}
+              </p>
+            </div>
+          </div>
+        )}
         
         {/* Progress indicator */}
         <div className="text-xs text-gray-600 mb-2 text-center">
@@ -276,7 +301,7 @@ export default function GamePage() {
           input={input}
           setInput={setInput}
           answerLength={currentPuzzle.word_length || 5}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isTransitioning}
         />
         
         <AskFriendsButton onShuffle={handleShuffle} />

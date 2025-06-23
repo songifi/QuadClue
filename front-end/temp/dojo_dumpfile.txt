@@ -1,0 +1,957 @@
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/types/manifest.d.ts ###
+Type: ts
+Lines:       96
+Size: 1861 bytes
+
+```ts
+/**
+ * TypeScript declaration for Dojo manifest file.
+ * Defines the structure of the manifest used by the Dojo Engine, based on manifest_dev.json.
+ */
+
+/**
+ * Interface for a manifest ABI item (e.g., struct, enum, function, event).
+ */
+interface AbiItem {
+    type: string;
+    name?: string;
+    interface_name?: string;
+    items?: AbiItem[];
+    members?: Array<{
+      name: string;
+      type: string;
+      kind?: string;
+    }>;
+    variants?: Array<{
+      name: string;
+      type: string;
+      kind?: string;
+    }>;
+    inputs?: Array<{
+      name: string;
+      type: string;
+    }>;
+    outputs?: Array<{
+      type: string;
+    }>;
+    state_mutability?: string;
+  }
+  
+  /**
+   * Interface for a contract in the manifest.
+   */
+  interface Contract {
+    address: string;
+    class_hash: string;
+    abi: AbiItem[];
+    init_calldata: any[];
+    tag: string;
+    selector: string;
+    systems: string[];
+  }
+  
+  /**
+   * Interface for a model in the manifest.
+   */
+  interface Model {
+    members: any[];
+    class_hash: string;
+    tag: string;
+    selector: string;
+  }
+  
+  /**
+   * Interface for an event in the manifest.
+   */
+  interface Event {
+    members: any[];
+    class_hash: string;
+    tag: string;
+    selector: string;
+  }
+  
+  /**
+   * Interface for the world in the manifest.
+   */
+  interface World {
+    class_hash: string;
+    address: string;
+    seed: string;
+    name: string;
+    entrypoints: string[];
+    abi: AbiItem[];
+  }
+  
+  /**
+   * Interface representing the Dojo manifest structure.
+   */
+  export interface Manifest {
+    world: World;
+    contracts: Contract[];
+    libraries: any[];
+    models: Model[];
+    events: Event[];
+    external_contracts: any[];
+  }
+  
+  /**
+   * Declare module for manifest JSON files.
+   */
+  declare module "*.json" {
+    const value: Manifest;
+    export default value;
+  }```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/typescript/contracts.gen.ts ###
+Type: ts
+Lines:      222
+Size: 6313 bytes
+
+```ts
+import { DojoProvider, DojoCall } from "@dojoengine/core";
+import { Account, AccountInterface, BigNumberish, CairoOption, CairoCustomEnum, ByteArray } from "starknet";
+import * as models from "./models.gen";
+
+export function setupWorld(provider: DojoProvider) {
+
+	const build_actions_addLyricsCard_calldata = (genre: CairoCustomEnum, artist: BigNumberish, title: BigNumberish, year: BigNumberish, lyrics: ByteArray): DojoCall => {
+		return {
+			contractName: "actions",
+			entrypoint: "add_lyrics_card",
+			calldata: [genre, artist, title, year, lyrics],
+		};
+	};
+
+	const actions_addLyricsCard = async (snAccount: Account | AccountInterface, genre: CairoCustomEnum, artist: BigNumberish, title: BigNumberish, year: BigNumberish, lyrics: ByteArray) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_actions_addLyricsCard_calldata(genre, artist, title, year, lyrics),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_actions_createRound_calldata = (genre: CairoCustomEnum): DojoCall => {
+		console.log('Building calldata for createRound:');
+  		console.log('Genre:', genre);
+  		console.log('Variant:', genre.variant);
+  		console.log('Active Variant:', genre.activeVariant());
+  		console.log('Unwrap:', genre.unwrap());
+		
+		  if (!genre.variant || typeof genre.variant !== 'object') {
+			throw new Error('Invalid CairoCustomEnum: variant is missing or not an object');
+		  }
+		return {
+			contractName: "actions",
+			entrypoint: "create_round",
+			calldata: [genre],
+		};
+	};
+
+	const actions_createRound = async (snAccount: Account | AccountInterface, genre: CairoCustomEnum) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_actions_createRound_calldata(genre),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_actions_getRoundId_calldata = (): DojoCall => {
+		return {
+			contractName: "actions",
+			entrypoint: "get_round_id",
+			calldata: [],
+		};
+	};
+
+	const actions_getRoundId = async () => {
+		try {
+			return await provider.call("lyricsflip", build_actions_getRoundId_calldata());
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_actions_isRoundPlayer_calldata = (roundId: BigNumberish, player: string): DojoCall => {
+		return {
+			contractName: "actions",
+			entrypoint: "is_round_player",
+			calldata: [roundId, player],
+		};
+	};
+
+	const actions_isRoundPlayer = async (roundId: BigNumberish, player: string) => {
+		try {
+			return await provider.call("lyricsflip", build_actions_isRoundPlayer_calldata(roundId, player));
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_actions_joinRound_calldata = (roundId: BigNumberish): DojoCall => {
+		return {
+			contractName: "actions",
+			entrypoint: "join_round",
+			calldata: [roundId],
+		};
+	};
+
+	const actions_joinRound = async (snAccount: Account | AccountInterface, roundId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_actions_joinRound_calldata(roundId),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_actions_startRound_calldata = (roundId: BigNumberish): DojoCall => {
+		return {
+			contractName: "actions",
+			entrypoint: "start_round",
+			calldata: [roundId],
+		};
+	};
+
+	const actions_startRound = async (snAccount: Account | AccountInterface, roundId: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_actions_startRound_calldata(roundId),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_game_config_setAdminAddress_calldata = (adminAddress: string): DojoCall => {
+		return {
+			contractName: "game_config",
+			entrypoint: "set_admin_address",
+			calldata: [adminAddress],
+		};
+	};
+
+	const game_config_setAdminAddress = async (snAccount: Account | AccountInterface, adminAddress: string) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_game_config_setAdminAddress_calldata(adminAddress),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_game_config_setCardsPerRound_calldata = (cardsPerRound: BigNumberish): DojoCall => {
+		return {
+			contractName: "game_config",
+			entrypoint: "set_cards_per_round",
+			calldata: [cardsPerRound],
+		};
+	};
+
+	const game_config_setCardsPerRound = async (snAccount: Account | AccountInterface, cardsPerRound: BigNumberish) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_game_config_setCardsPerRound_calldata(cardsPerRound),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+	const build_game_config_setGameConfig_calldata = (adminAddress: string): DojoCall => {
+		return {
+			contractName: "game_config",
+			entrypoint: "set_game_config",
+			calldata: [adminAddress],
+		};
+	};
+
+	const game_config_setGameConfig = async (snAccount: Account | AccountInterface, adminAddress: string) => {
+		try {
+			return await provider.execute(
+				snAccount,
+				build_game_config_setGameConfig_calldata(adminAddress),
+				"lyricsflip",
+			);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	};
+
+
+
+	return {
+		actions: {
+			addLyricsCard: actions_addLyricsCard,
+			buildAddLyricsCardCalldata: build_actions_addLyricsCard_calldata,
+			createRound: actions_createRound,
+			buildCreateRoundCalldata: build_actions_createRound_calldata,
+			getRoundId: actions_getRoundId,
+			buildGetRoundIdCalldata: build_actions_getRoundId_calldata,
+			isRoundPlayer: actions_isRoundPlayer,
+			buildIsRoundPlayerCalldata: build_actions_isRoundPlayer_calldata,
+			joinRound: actions_joinRound,
+			buildJoinRoundCalldata: build_actions_joinRound_calldata,
+			startRound: actions_startRound,
+			buildStartRoundCalldata: build_actions_startRound_calldata,
+		},
+		game_config: {
+			setAdminAddress: game_config_setAdminAddress,
+			buildSetAdminAddressCalldata: build_game_config_setAdminAddress_calldata,
+			setCardsPerRound: game_config_setCardsPerRound,
+			buildSetCardsPerRoundCalldata: build_game_config_setCardsPerRound_calldata,
+			setGameConfig: game_config_setGameConfig,
+			buildSetGameConfigCalldata: build_game_config_setGameConfig_calldata,
+		},
+	};
+}```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/typescript/models.gen.ts ###
+Type: ts
+Lines:      341
+Size: 8420 bytes
+
+```ts
+import type { SchemaType as ISchemaType } from "@dojoengine/sdk";
+
+import { BigNumberish } from 'starknet';
+
+// Type definition for `lyricsflip::models::card::ArtistCards` struct
+export interface ArtistCards {
+	artist: BigNumberish;
+	cards: Array<BigNumberish>;
+}
+
+// Type definition for `lyricsflip::models::card::ArtistCardsValue` struct
+export interface ArtistCardsValue {
+	cards: Array<BigNumberish>;
+}
+
+// Type definition for `lyricsflip::models::card::LyricsCard` struct
+export interface LyricsCard {
+	card_id: BigNumberish;
+	genre: BigNumberish;
+	artist: BigNumberish;
+	title: BigNumberish;
+	year: BigNumberish;
+	lyrics: string;
+}
+
+// Type definition for `lyricsflip::models::card::LyricsCardCount` struct
+export interface LyricsCardCount {
+	id: BigNumberish;
+	count: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::card::LyricsCardCountValue` struct
+export interface LyricsCardCountValue {
+	count: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::card::LyricsCardValue` struct
+export interface LyricsCardValue {
+	genre: BigNumberish;
+	artist: BigNumberish;
+	title: BigNumberish;
+	year: BigNumberish;
+	lyrics: string;
+}
+
+// Type definition for `lyricsflip::models::card::YearCards` struct
+export interface YearCards {
+	year: BigNumberish;
+	cards: Array<BigNumberish>;
+}
+
+// Type definition for `lyricsflip::models::card::YearCardsValue` struct
+export interface YearCardsValue {
+	cards: Array<BigNumberish>;
+}
+
+// Type definition for `lyricsflip::models::config::GameConfig` struct
+export interface GameConfig {
+	id: BigNumberish;
+	cards_per_round: BigNumberish;
+	admin_address: string;
+}
+
+// Type definition for `lyricsflip::models::config::GameConfigValue` struct
+export interface GameConfigValue {
+	cards_per_round: BigNumberish;
+	admin_address: string;
+}
+
+// Type definition for `lyricsflip::models::round::PlayerStats` struct
+export interface PlayerStats {
+	player: string;
+	total_rounds: BigNumberish;
+	rounds_won: BigNumberish;
+	current_streak: BigNumberish;
+	max_streak: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::round::PlayerStatsValue` struct
+export interface PlayerStatsValue {
+	total_rounds: BigNumberish;
+	rounds_won: BigNumberish;
+	current_streak: BigNumberish;
+	max_streak: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::round::Round` struct
+export interface Round {
+	creator: string;
+	genre: BigNumberish;
+	wager_amount: BigNumberish;
+	start_time: BigNumberish;
+	state: BigNumberish;
+	end_time: BigNumberish;
+	next_card_index: BigNumberish;
+	players_count: BigNumberish;
+	ready_players_count: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::round::RoundPlayer` struct
+export interface RoundPlayer {
+	player_to_round_id: [string, BigNumberish];
+	joined: boolean;
+	ready_state: boolean;
+}
+
+// Type definition for `lyricsflip::models::round::RoundPlayerValue` struct
+export interface RoundPlayerValue {
+	joined: boolean;
+	ready_state: boolean;
+}
+
+// Type definition for `lyricsflip::models::round::Rounds` struct
+export interface Rounds {
+	round_id: BigNumberish;
+	round: Round;
+}
+
+// Type definition for `lyricsflip::models::round::RoundsCount` struct
+export interface RoundsCount {
+	id: BigNumberish;
+	count: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::round::RoundsCountValue` struct
+export interface RoundsCountValue {
+	count: BigNumberish;
+}
+
+// Type definition for `lyricsflip::models::round::RoundsValue` struct
+export interface RoundsValue {
+	round: Round;
+}
+
+// Type definition for `lyricsflip::systems::actions::actions::PlayerReady` struct
+export interface PlayerReady {
+	round_id: BigNumberish;
+	player: string;
+	ready_time: BigNumberish;
+}
+
+// Type definition for `lyricsflip::systems::actions::actions::PlayerReadyValue` struct
+export interface PlayerReadyValue {
+	ready_time: BigNumberish;
+}
+
+// Type definition for `lyricsflip::systems::actions::actions::RoundCreated` struct
+export interface RoundCreated {
+	round_id: BigNumberish;
+	creator: string;
+}
+
+// Type definition for `lyricsflip::systems::actions::actions::RoundCreatedValue` struct
+export interface RoundCreatedValue {
+	creator: string;
+}
+
+// Type definition for `lyricsflip::systems::actions::actions::RoundJoined` struct
+export interface RoundJoined {
+	round_id: BigNumberish;
+	player: string;
+}
+
+// Type definition for `lyricsflip::systems::actions::actions::RoundJoinedValue` struct
+export interface RoundJoinedValue {
+	player: string;
+}
+
+export interface SchemaType extends ISchemaType {
+	lyricsflip: {
+		ArtistCards: ArtistCards,
+		ArtistCardsValue: ArtistCardsValue,
+		LyricsCard: LyricsCard,
+		LyricsCardCount: LyricsCardCount,
+		LyricsCardCountValue: LyricsCardCountValue,
+		LyricsCardValue: LyricsCardValue,
+		YearCards: YearCards,
+		YearCardsValue: YearCardsValue,
+		GameConfig: GameConfig,
+		GameConfigValue: GameConfigValue,
+		PlayerStats: PlayerStats,
+		PlayerStatsValue: PlayerStatsValue,
+		Round: Round,
+		RoundPlayer: RoundPlayer,
+		RoundPlayerValue: RoundPlayerValue,
+		Rounds: Rounds,
+		RoundsCount: RoundsCount,
+		RoundsCountValue: RoundsCountValue,
+		RoundsValue: RoundsValue,
+		PlayerReady: PlayerReady,
+		PlayerReadyValue: PlayerReadyValue,
+		RoundCreated: RoundCreated,
+		RoundCreatedValue: RoundCreatedValue,
+		RoundJoined: RoundJoined,
+		RoundJoinedValue: RoundJoinedValue,
+	},
+}
+export const schema: SchemaType = {
+	lyricsflip: {
+		ArtistCards: {
+			artist: 0,
+			cards: [0],
+		},
+		ArtistCardsValue: {
+			cards: [0],
+		},
+		LyricsCard: {
+		card_id: 0,
+			genre: 0,
+			artist: 0,
+			title: 0,
+			year: 0,
+		lyrics: "",
+		},
+		LyricsCardCount: {
+			id: 0,
+		count: 0,
+		},
+		LyricsCardCountValue: {
+		count: 0,
+		},
+		LyricsCardValue: {
+			genre: 0,
+			artist: 0,
+			title: 0,
+			year: 0,
+		lyrics: "",
+		},
+		YearCards: {
+			year: 0,
+			cards: [0],
+		},
+		YearCardsValue: {
+			cards: [0],
+		},
+		GameConfig: {
+			id: 0,
+			cards_per_round: 0,
+			admin_address: "",
+		},
+		GameConfigValue: {
+			cards_per_round: 0,
+			admin_address: "",
+		},
+		PlayerStats: {
+			player: "",
+			total_rounds: 0,
+			rounds_won: 0,
+			current_streak: 0,
+			max_streak: 0,
+		},
+		PlayerStatsValue: {
+			total_rounds: 0,
+			rounds_won: 0,
+			current_streak: 0,
+			max_streak: 0,
+		},
+		Round: {
+			creator: "",
+			genre: 0,
+		wager_amount: 0,
+			start_time: 0,
+			state: 0,
+			end_time: 0,
+			next_card_index: 0,
+		players_count: 0,
+		ready_players_count: 0,
+		},
+		RoundPlayer: {
+			player_to_round_id: ["", 0],
+			joined: false,
+			ready_state: false,
+		},
+		RoundPlayerValue: {
+			joined: false,
+			ready_state: false,
+		},
+		Rounds: {
+		round_id: 0,
+		round: { creator: "", genre: 0, wager_amount: 0, start_time: 0, state: 0, end_time: 0, next_card_index: 0, players_count: 0, ready_players_count: 0, },
+		},
+		RoundsCount: {
+			id: 0,
+		count: 0,
+		},
+		RoundsCountValue: {
+		count: 0,
+		},
+		RoundsValue: {
+		round: { creator: "", genre: 0, wager_amount: 0, start_time: 0, state: 0, end_time: 0, next_card_index: 0, players_count: 0, ready_players_count: 0, },
+		},
+		PlayerReady: {
+		round_id: 0,
+			player: "",
+			ready_time: 0,
+		},
+		PlayerReadyValue: {
+			ready_time: 0,
+		},
+		RoundCreated: {
+		round_id: 0,
+			creator: "",
+		},
+		RoundCreatedValue: {
+			creator: "",
+		},
+		RoundJoined: {
+		round_id: 0,
+			player: "",
+		},
+		RoundJoinedValue: {
+			player: "",
+		},
+	},
+};
+export enum ModelsMapping {
+	ArtistCards = 'lyricsflip-ArtistCards',
+	ArtistCardsValue = 'lyricsflip-ArtistCardsValue',
+	LyricsCard = 'lyricsflip-LyricsCard',
+	LyricsCardCount = 'lyricsflip-LyricsCardCount',
+	LyricsCardCountValue = 'lyricsflip-LyricsCardCountValue',
+	LyricsCardValue = 'lyricsflip-LyricsCardValue',
+	YearCards = 'lyricsflip-YearCards',
+	YearCardsValue = 'lyricsflip-YearCardsValue',
+	GameConfig = 'lyricsflip-GameConfig',
+	GameConfigValue = 'lyricsflip-GameConfigValue',
+	PlayerStats = 'lyricsflip-PlayerStats',
+	PlayerStatsValue = 'lyricsflip-PlayerStatsValue',
+	Round = 'lyricsflip-Round',
+	RoundPlayer = 'lyricsflip-RoundPlayer',
+	RoundPlayerValue = 'lyricsflip-RoundPlayerValue',
+	Rounds = 'lyricsflip-Rounds',
+	RoundsCount = 'lyricsflip-RoundsCount',
+	RoundsCountValue = 'lyricsflip-RoundsCountValue',
+	RoundsValue = 'lyricsflip-RoundsValue',
+	PlayerReady = 'lyricsflip-PlayerReady',
+	PlayerReadyValue = 'lyricsflip-PlayerReadyValue',
+	RoundCreated = 'lyricsflip-RoundCreated',
+	RoundCreatedValue = 'lyricsflip-RoundCreatedValue',
+	RoundJoined = 'lyricsflip-RoundJoined',
+	RoundJoinedValue = 'lyricsflip-RoundJoinedValue',
+}```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/setup.ts ###
+Type: ts
+Lines:       16
+Size: 356 bytes
+
+```ts
+import { Account } from "starknet";
+import { DojoProvider } from "@dojoengine/core";
+import { provider } from "./world";
+import * as models from "./typescript/models.gen";
+
+export interface SetupResult {
+  provider: DojoProvider;
+  models: typeof models;
+}
+
+export async function setup(): Promise<SetupResult> {
+  return {
+    provider,
+    models,
+  };
+}
+```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/hooks/useDojo.ts ###
+Type: ts
+Lines:       37
+Size: 929 bytes
+
+```ts
+import { useContext } from 'react';
+import { Account } from 'starknet';
+import { DojoContext, DojoContextType } from '../DojoProvider';
+import { DojoSetup } from '../setup';
+
+// Simple logger utility (replace with SDK logging if available)
+class Logger {
+  static info(message: string, meta?: Record<string, unknown>) {
+    console.info(`[INFO] ${message}`, meta || {});
+  }
+}
+
+/**
+ * Hook to access the Dojo context and setup.
+ * @returns The Dojo setup, account, loading state, and error.
+ */
+export function useDojo(): {
+  setup: DojoSetup | null;
+  account: Account | null;
+  isLoading: boolean;
+  error: Error | null;
+} {
+  const { setup, isLoading, error }: DojoContextType = useContext(DojoContext);
+
+  Logger.info("useDojo accessed", {
+    isLoading,
+    hasSetup: !!setup,
+    hasError: !!error,
+  });
+
+  // Return current state
+  return {
+    setup,
+    account: setup?.account ?? null,
+    isLoading,
+    error,
+  };
+}```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/dojoConfig.ts ###
+Type: ts
+Lines:       26
+Size: 1008 bytes
+
+```ts
+import { createDojoConfig, DojoConfig } from "@dojoengine/core";
+import manifest from "../../../manifest_dev.json";
+
+/**
+ * Creates the Dojo configuration using environment variables.
+ * @returns The Dojo configuration object.
+ */
+export const createConfig = (): DojoConfig => {
+  // Use environment variables directly
+  const config = {
+    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL!,
+    toriiUrl: process.env.NEXT_PUBLIC_TORII_URL,
+    relayUrl: process.env.NEXT_PUBLIC_RELAY_URL,
+    manifest,
+    masterAddress: process.env.NEXT_PUBLIC_MASTER_ADDRESS!,
+    masterPrivateKey: process.env.NEXT_PUBLIC_MASTER_PRIVATE_KEY!,
+    accountClassHash: process.env.NEXT_PUBLIC_ACCOUNT_CLASS_HASH!,
+    worldAddress: manifest.world.address,
+  };
+
+  // Validate required configuration
+  if (!config.rpcUrl || !config.masterAddress || !config.masterPrivateKey || !config.accountClassHash) {
+    throw new Error('Missing required environment variables for Dojo configuration');
+  }
+
+  return createDojoConfig(config);
+};```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/index.ts ###
+Type: ts
+Lines:        1
+Size: 57 bytes
+
+```ts
+export * from './world';
+export * from './DojoProvider'; ```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/DojoProvider.tsx ###
+Type: tsx
+Lines:      113
+Size: 3269 bytes
+
+```tsx
+import { createContext, useEffect, useState, useRef, useCallback } from 'react';
+import { Account } from 'starknet';
+import { DojoConfig } from '@dojoengine/core';
+import { setup, SetupResult } from './setup';
+import { createConfig } from './dojoConfig';
+
+// Simple logger utility (replace with SDK logging if available)
+class Logger {
+  static info(message: string, meta?: Record<string, unknown>) {
+    console.info(`[INFO] ${message}`, meta || {});
+  }
+  static warn(message: string, meta?: Record<string, unknown>) {
+    console.warn(`[WARN] ${message}`, meta || {});
+  }
+  static error(message: string, error?: Error, meta?: Record<string, unknown>) {
+    console.error(`[ERROR] ${message}`, { error, ...meta });
+  }
+}
+
+/**
+ * Context type for Dojo setup and state.
+ */
+export interface DojoContextType {
+  setup: SetupResult | null;
+  isLoading: boolean;
+  error: Error | null;
+  warnings: string[];
+}
+
+/**
+ * Dojo context for React components.
+ */
+export const DojoContext = createContext<DojoContextType>({
+  setup: null,
+  isLoading: true,
+  error: null,
+  warnings: [],
+});
+
+/**
+ * Custom error for Dojo provider failures.
+ */
+class DojoProviderError extends Error {
+  constructor(message: string, cause?: Error) {
+    super(message);
+    this.name = "DojoProviderError";
+    this.cause = cause;
+  }
+}
+
+/**
+ * Dojo provider component to initialize and provide Dojo context.
+ * @param children - React children to render within the provider.
+ */
+export const DojoProvider = ({ children }: { children: React.ReactNode }) => {
+  const [dojoSetup, setDojoSetup] = useState<SetupResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const hasSetup = useRef(false);
+
+  const initDojo = useCallback(async () => {
+    if (hasSetup.current) {
+      Logger.info("Skipping duplicate Dojo initialization");
+      return;
+    }
+
+    Logger.info("Starting Dojo setup");
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const config = createConfig();
+      const setupResult = await setup(config);
+
+      if (!setupResult.config?.actions || !setupResult.config?.game_config) {
+        throw new DojoProviderError('Setup completed but configuration is incomplete');
+      }
+
+      setDojoSetup(setupResult);
+      hasSetup.current = true;
+      
+      Logger.info("Dojo setup completed", {
+        hasConfig: !!setupResult.config,
+        hasActions: !!setupResult.config.actions,
+        hasGameConfig: !!setupResult.config.game_config,
+        hasAccount: !!setupResult.account,
+      });
+    } catch (error) {
+      Logger.error("Dojo initialization failed", error as Error);
+      setError(error instanceof Error ? error : new DojoProviderError('Unknown error occurred'));
+      setDojoSetup(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    initDojo();
+  }, [initDojo]);
+
+  Logger.info("DojoProvider rendering", {
+    hasSetup: !!dojoSetup,
+    isLoading,
+    hasError: !!error,
+    warningsCount: warnings.length,
+  });
+
+  return (
+    <DojoContext.Provider value={{ setup: dojoSetup, isLoading, error, warnings }}>
+      {children}
+    </DojoContext.Provider>
+  );
+};          ```
+
+----------------------------------------
+
+
+### File: Documents/lyricsflip_frontend/src/lib/dojo/world.ts ###
+Type: ts
+Lines:        6
+Size: 253 bytes
+
+```ts
+import { DojoProvider } from "@dojoengine/core";
+import manifest from "../../../manifest_dev.json";
+
+// Create a Dojo provider
+const provider = new DojoProvider(manifest, process.env.NEXT_PUBLIC_RPC_URL || "http://localhost:5050");
+
+export { provider };```
+
+----------------------------------------
+

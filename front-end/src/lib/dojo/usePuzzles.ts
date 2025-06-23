@@ -229,3 +229,66 @@ export function getTestPuzzleData() {
   ];
 }
 
+// Batch puzzle data helper - creates puzzles from the 10 folder directories
+export function getBatchPuzzleData() {
+  // Define the 10 puzzle folders in public directory (excluding 'sounds')
+  const puzzleFolders = [
+    {
+      folder: 'Book',
+      answer: 'BOOK',
+      images: ['old_book.png', 'book_stack.png', 'Library.png', 'Glowing_pages.png']
+    },
+    {
+      folder: 'Cold',
+      answer: 'COLD',
+      images: ['frozen_lake.jpg', 'ice_cubes.jpg', 'ice_mountains.png', 'winter.png']
+    },
+    {
+      folder: 'Fire',
+      answer: 'FIRE',
+      images: ['volcano.png', 'matchstick.png', 'firefighter.png', 'campfire.png']
+    },
+    {
+      folder: 'Happy',
+      answer: 'HAPPY',
+      images: ['Ballons_and_confetti.jpg', 'Jumping.jpg', 'Laughing_child.png', 'Smiling_group.png']
+    },
+    {
+      folder: 'Light',
+      answer: 'LIGHT',
+      images: ['Flashlight.jpg', 'Forest_light.jpg', 'Light_bulb.jpeg', 'Sunrise.jpg']
+    },
+    {
+      folder: 'Money',
+      answer: 'MONEY',
+      images: ['atm.jpg', 'coins.jpg', 'dollar_stack.jpg', 'wallet.jpg']
+    },
+    {
+      folder: 'Music',
+      answer: 'MUSIC',
+      images: ['concert.jpg', 'Guitar.jpg', 'headphones.jpg', 'music_note.jpg']
+    },
+    {
+      folder: 'Sky',
+      answer: 'SKY',
+      images: ['airplane.jpg', 'hot_air_balloon.jpg', 'night.jpg', 'sky.jpg']
+    },
+    {
+      folder: 'Time',
+      answer: 'TIME',
+      images: ['Calendar.png', 'Clock.jpg', 'hour_glasss.png', 'watch.jpg']
+    },
+    {
+      folder: 'Water',
+      answer: 'WATER',
+      images: ['Rain.png', 'Water_Glass.png', 'Waterfall.png', 'Waves.jpg']
+    }
+  ];
+
+  // Convert to PuzzleData format with folder-based image paths
+  return puzzleFolders.map(folder => ({
+    image_hashes: folder.images.map(image => `${folder.folder}/${image}`),
+    answer: folder.answer
+  }));
+}
+
