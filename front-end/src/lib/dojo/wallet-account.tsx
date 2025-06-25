@@ -47,7 +47,7 @@ export const WalletAccount = React.memo(() => {
             prevValuesRef.current = currentValues;
         }
     }, [address, connectors.length, pendingConnectorId, connectors]);
-
+//connect wallet 
     const connect = useCallback(
         async (connector: Connector) => {
             console.log('🔌 Attempting to connect with:', connector.name);

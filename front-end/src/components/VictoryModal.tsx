@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { PlayerStats } from "@/types/user";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/constants";
 
 interface VictoryModalProps {
   open: boolean;
@@ -34,6 +36,7 @@ export default function VictoryModal({
   playerStats,
 }: VictoryModalProps) {
   const [showCelebration, setShowCelebration] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (open) {
@@ -227,13 +230,33 @@ export default function VictoryModal({
           </div>
         )}
 
-        {/* Continue button */}
-        <button
-          className="w-full bg-[#FF8C00] text-white font-bold rounded-xl py-4 text-lg shadow-lg hover:cursor-pointer transition-colors hover:bg-[#e67e00]"
-          onClick={handleContinue}
-        >
-          {isGameComplete ? "FINISH" : "NEXT PUZZLE"}
-        </button>
+        {/* Continue button(s) */}
+        {isGameComplete ? (
+          <div className="w-full space-y-2">
+            <button
+              className="w-full bg-blue-500 text-white font-bold rounded-xl py-4 text-lg shadow-lg hover:cursor-pointer transition-colors hover:bg-blue-600"
+              onClick={() => {
+                onClose();
+                router.push(ROUTES.HOME);
+              }}
+            >
+              RETURN HOME
+            </button>
+            <button
+              className="w-full bg-[#FF8C00] text-white font-bold rounded-xl py-4 text-lg shadow-lg hover:cursor-pointer transition-colors hover:bg-[#e67e00]"
+              onClick={handleContinue}
+            >
+              CLOSE
+            </button>
+          </div>
+        ) : (
+          <button
+            className="w-full bg-[#FF8C00] text-white font-bold rounded-xl py-4 text-lg shadow-lg hover:cursor-pointer transition-colors hover:bg-[#e67e00]"
+            onClick={handleContinue}
+          >
+            NEXT PUZZLE
+          </button>
+        )}
       </div>
     </div>
   );

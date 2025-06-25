@@ -5,11 +5,18 @@ import NavigationBar from "@/components/NavigationBar";
 import { ROUTES } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import { useDisconnect } from "@starknet-react/core";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { disconnect } = useDisconnect();
 
   const handleClose = () => {
+    router.push(ROUTES.HOME);
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
     router.push(ROUTES.HOME);
   };
 
@@ -154,6 +161,16 @@ export default function ProfilePage() {
                   <option value="Nigeria">NIGERIA</option>
                   {/* Add more countries as needed */}
                 </select>
+              </div>
+              
+              {/* Disconnect Wallet Button */}
+              <div className="mt-6 w-full">
+                <button
+                  onClick={handleDisconnect}
+                  className="w-52 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors font-bricolage"
+                >
+                  DISCONNECT WALLET
+                </button>
               </div>
             </div>
           </div>

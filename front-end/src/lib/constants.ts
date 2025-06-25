@@ -20,4 +20,5 @@ export const ROUTES = {
   GAME: "/game",
   PROFILE: "/profile",
   SIGNUP: "/signup",
+  DASHBOARD: "/dashboard",
 } as const;

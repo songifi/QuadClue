@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import UsernameSignup from "@/components/UsernameSignup";
-import { useAccount } from "@starknet-react/core";
+import { useAccount, useConnect } from "@starknet-react/core";
 import { useEffect } from "react";
 
 export default function SignupPage() {
   const router = useRouter();
   const { isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
 
   // Redirect to home if already connected
   useEffect(() => {
@@ -15,6 +16,27 @@ export default function SignupPage() {
       router.push("/");
     }
   }, [isConnected, router]);
+
+  // Function to handle Katana connection for development
+  const handleKatanaConnect = async () => {
+    try {
+      // Find the first Katana predeployed account connector
+      const katanaConnector = connectors.find(connector => 
+        connector.id === "katana" || connector.name?.toLowerCase().includes("katana")
+      );
+      
+      if (katanaConnector) {
+        console.log('🔧 Connecting with Katana for development...');
+        await connect({ connector: katanaConnector });
+      } else {
+        console.error('❌ Katana connector not found. Make sure Katana is running.');
+        alert('Katana connector not found. Make sure Katana is running on localhost:5050');
+      }
+    } catch (error) {
+      console.error('❌ Failed to connect with Katana:', error);
+      alert('Failed to connect with Katana. Please check console for details.');
+    }
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-800">
@@ -65,6 +87,28 @@ export default function SignupPage() {
           <div className="w-full bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200">
             <UsernameSignup />
           </div>
+
+          {/* Development Mode Button */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-6 w-full">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start mb-3">
+                  <div className="text-yellow-600 mr-2">⚠️</div>
+                  <div className="text-sm text-yellow-800">
+                    <strong>Development Mode</strong>
+                    <br />
+                    Use Katana local accounts for testing
+                  </div>
+                </div>
+                <button
+                  onClick={handleKatanaConnect}
+                  className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+                >
+                  🔧 Connect with Katana (Dev)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Alternative option */}
           <div className="mt-6 text-center">

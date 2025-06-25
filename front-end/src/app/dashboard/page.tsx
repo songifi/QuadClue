@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from '@starknet-react/core';
 import { useSystemCalls } from '@/lib/dojo';
-import { getTestPuzzleData } from '@/lib/dojo/usePuzzles';
+import { getTestPuzzleData, getBatchPuzzleData } from '@/lib/dojo/usePuzzles';
 import { ROUTES } from '@/lib/constants';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function Dashboard() {
-  const { createPuzzle, isConnected, account } = useSystemCalls();
+  const { createPuzzle, addBatchPuzzle, isConnected, account } = useSystemCalls();
   const testPuzzleData = getTestPuzzleData();
+  const batchPuzzleData = getBatchPuzzleData();
   const router = useRouter();
   
   // Simple debug logging
@@ -30,6 +31,7 @@ export default function Dashboard() {
   });
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isBatchLoading, setIsBatchLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -59,6 +61,28 @@ export default function Dashboard() {
       toast.error('Failed to create test puzzle');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // New function to create batch puzzles
+  const handleCreateBatchPuzzles = async () => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      setIsBatchLoading(true);
+      console.log('🚀 Creating batch puzzles with data:', batchPuzzleData);
+      
+      await addBatchPuzzle(batchPuzzleData);
+      
+      toast.success(`Successfully created ${batchPuzzleData.length} puzzles!`);
+    } catch (error) {
+      console.error('Error creating batch puzzles:', error);
+      toast.error('Failed to create batch puzzles');
+    } finally {
+      setIsBatchLoading(false);
     }
   };
 
@@ -194,6 +218,13 @@ export default function Dashboard() {
               {isLoading ? 'Creating...' : 'Create Test Puzzle (PAINT)'}
             </button>
             <button
+              onClick={handleCreateBatchPuzzles}
+              disabled={!isConnected || isBatchLoading}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+            >
+              {isBatchLoading ? `Creating ${batchPuzzleData.length}...` : `Create Batch Puzzles (${batchPuzzleData.length})`}
+            </button>
+            <button
               onClick={handleLoadTestData}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
             >
@@ -207,9 +238,14 @@ export default function Dashboard() {
               Go to Game
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">
-            Test with existing images: paint1.png, paint2.png, paint3.png, paint4.png
-          </p>
+          <div className="mt-3 space-y-1">
+            <p className="text-xs text-gray-400">
+              Test with existing images: paint1.png, paint2.png, paint3.png, paint4.png
+            </p>
+            <p className="text-xs text-gray-400">
+              Batch puzzles: Book, Cold, Fire, Happy, Light, Money, Music, Sky, Time, Water
+            </p>
+          </div>
         </div>
 
         {/* Create Puzzle Form */}
