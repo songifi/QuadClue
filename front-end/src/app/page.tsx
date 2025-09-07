@@ -123,8 +123,20 @@ const CLU3HomeScreen = () => {
               <span>{soundOn ? "Audio On" : "Audio Off"}</span>
             </div>
           )}
-        </div>
 
+          <div className="w-full flex justify-center mb-4">
+            <button
+              onClick={() => {
+                playSound("/sounds/button-click.wav", 0.6);
+                router.push("/dashboard");
+              }}
+              onMouseEnter={handleButtonHover}
+              className="px-4 py-2 rounded-lg bg-blue-500 text-white font-bold shadow hover:bg-blue-600 transition-colors"
+            >
+              Dashboard
+            </button>
+          </div>
+        </div>
         <div className="w-full flex flex-row gap-2 mb-8 min-w-0 max-w-[340px] mx-auto mt-4 items-start">
           <div className="flex flex-row gap-4 flex-1 min-w-0">
             <div onMouseEnter={handleButtonHover}>
